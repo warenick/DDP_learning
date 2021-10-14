@@ -4,8 +4,6 @@ import numpy as np
 from autograd import grad, jacobian
 import autograd.numpy as np
 
-
-
 class DDP:
     def __init__(self, agent) -> None:
         pred_time = len(agent.history["state"]) - 1
@@ -78,9 +76,9 @@ if __name__=="__main__":
     epochs = 20
 
     viz = Visualizer_ros()
-    agent = Agent(goal=np.array([3, 3, 0, 5., 0.]))
-    u = np.zeros((horizon,agent.state.shape[-1])) # [[V,Vyaw],[V,Vyaw],...]
-    u[:,-2]=2.  
+    agent = Agent(goal=np.array([3, 3, 0, 5., 0.])) # [x,y,yaw,V,Vyaw]
+    u = np.zeros((horizon,agent.state.shape[-1])) # [[0,0,0,V,Vyaw],[0,0,0,V,Vyaw],...]
+    u[:,-2]=2. # set initial V=2.
     state_dim = agent.state.shape[-1]
     agent.update_history(u) # calc nominal trajectory(->agent.history)
     viz.pub_agent_state([agent]) # just vis in rviz
