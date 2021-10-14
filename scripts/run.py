@@ -9,9 +9,9 @@ class DDP:
         pred_time = len(agent.history["state"]) - 1
         self.umax = agent.umax
         self.dt = agent.dt
-        self.v = [0.0 for _ in range(pred_time + 1)]
-        self.v_x = [np.zeros(state_dim) for _ in range(pred_time + 1)]
-        self.v_xx = [np.zeros((state_dim, state_dim)) for _ in range(pred_time + 1)]
+        self.v = [1e-10 for _ in range(pred_time + 1)]
+        self.v_x = [np.zeros(state_dim)+1e-10 for _ in range(pred_time + 1)]
+        self.v_xx = [np.zeros((state_dim, state_dim))+1e-10 for _ in range(pred_time + 1)]
         self.f = agent.step_func
         self.lf = agent.final_cost
         self.lf_x = grad(self.lf)
@@ -29,31 +29,47 @@ class DDP:
 
     def backward(self, x_seq, u_seq):
         pred_time = len(agent.history["state"]) - 1
-        self.v[-1] = self.lf(x_seq[-1])
-        self.v_x[-1] = self.lf_x(x_seq[-1])
-        self.v_xx[-1] = self.lf_xx(x_seq[-1])
+        # that definition here just for readability
+        v = [1e-10 for _ in range(pred_time + 1)]
+        v_x = [np.zeros(state_dim)+1e-10 for _ in range(pred_time + 1)]
+        v_xx = [np.zeros((state_dim, state_dim))+1e-10 for _ in range(pred_time + 1)]
+        lf = self.lf
+        lf_x = self.lf_x
+        lf_xx = self.lf_xx
+        l_x = self.l_x
+        l_u = self.l_u
+        l_xx = self.l_xx
+        l_uu = self.l_uu
+        l_ux = self.l_ux
+        f_x = self.f_x
+        f_u = self.f_u
+        f_xx = self.f_xx
+        f_uu = self.f_uu
+        f_ux = self.f_ux
+        # that definition here just for readability
+        
+
+        v[-1] = lf(x_seq[-1])
+        v_x[-1] = lf_x(x_seq[-1])
+        v_xx[-1] = lf_xx(x_seq[-1])
         k_seq = []
         kk_seq = []
         for t in range(pred_time - 1, -1, -1):
-            f_x_t = self.f_x(x_seq[t], u_seq[t])
-            f_u_t = self.f_u(x_seq[t], u_seq[t])
-            q_x = self.l_x(x_seq[t], u_seq[t]) + np.matmul(f_x_t.T, self.v_x[t + 1])
-            q_u = self.l_u(x_seq[t], u_seq[t]) + np.matmul(f_u_t.T, self.v_x[t + 1])
-            q_xx = self.l_xx(x_seq[t], u_seq[t]) + \
-              np.matmul(np.matmul(f_x_t.T, self.v_xx[t + 1]), f_x_t) + \
-              np.dot(self.v_x[t + 1], np.squeeze(self.f_xx(x_seq[t], u_seq[t])))
-            tmp = np.matmul(f_u_t.T, self.v_xx[t + 1])
-            q_uu = self.l_uu(x_seq[t], u_seq[t]) + np.matmul(tmp, f_u_t) + \
-              np.dot(self.v_x[t + 1], np.squeeze(self.f_uu(x_seq[t], u_seq[t])))
-            q_ux = self.l_ux(x_seq[t], u_seq[t]) + np.matmul(tmp, f_x_t) + \
-              np.dot(self.v_x[t + 1], np.squeeze(self.f_ux(x_seq[t], u_seq[t])))
-            inv_q_uu = np.linalg.inv(q_uu)
-            k = -np.matmul(inv_q_uu, q_u)
-            kk = -np.matmul(inv_q_uu, q_ux)
-            dv = 0.5 * np.matmul(q_u, k)
-            self.v[t] += dv
-            self.v_x[t] = q_x - np.matmul(np.matmul(q_u, inv_q_uu), q_ux)
-            self.v_xx[t] = q_xx + np.matmul(q_ux.T, kk)
+            x,u = (x_seq[t], u_seq[t]) # state and controll at the current time step
+            f_x_t = f_x(x,u)
+            f_u_t = f_u(x,u)
+            Q_x = l_x(x,u) + f_x_t.T @ v_x[t+1]
+            Q_u = l_u(x,u) + f_u_t.T @ v_x[t+1]
+            Q_xx = l_xx(x,u) + f_x_t.T @ v_xx[t+1] @ f_x_t + v_x[t+1] @ f_xx(x,u)
+            Q_uu = l_uu(x,u) + f_u_t.T @ v_xx[t+1] @ f_u_t + v_x[t+1] @ f_uu(x,u)
+            Q_ux = l_ux(x,u) + f_u_t.T @ v_xx[t+1] @ f_x_t + v_x[t+1] @ f_ux(x,u)
+            inv_Q_uu = np.linalg.inv(Q_uu)
+            k = -inv_Q_uu @ Q_u
+            kk = -inv_Q_uu @ Q_ux
+            dv = 0.5 * Q_u @ k
+            v[t] += dv
+            v_x[t] = Q_x - Q_u @ inv_Q_uu @ Q_ux
+            v_xx[t] = Q_xx + Q_ux.T @ kk
             k_seq.append(k)
             kk_seq.append(kk)
         k_seq.reverse()
@@ -64,8 +80,7 @@ class DDP:
         x_seq_hat = np.array(x_seq)
         u_seq_hat = np.array(u_seq)
         for t in range(len(u_seq)):
-            control = self.dt*k_seq[t] + np.matmul(self.dt*kk_seq[t], (x_seq_hat[t] - x_seq[t]))
-            # control = 0.03*k_seq[t] + np.matmul(0.03*kk_seq[t], (x_seq_hat[t] - x_seq[t]))
+            control = self.dt*k_seq[t] + self.dt*kk_seq[t] @ (x_seq_hat[t] - x_seq[t])
             u_seq_hat[t] = np.clip(u_seq[t] + control, -self.umax, self.umax)
             x_seq_hat[t + 1] = self.f(x_seq_hat[t], u_seq_hat[t])
         return x_seq_hat, u_seq_hat
