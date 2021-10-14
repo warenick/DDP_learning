@@ -40,14 +40,10 @@ class Agent():
                                               [np.sin(x[2]), 0],
                                               [0,                    1]]), velocity)
         return np.concatenate((pose,velocity)) 
-            # x[3:] = self.dt*np.clip(u+x[3:], -self.umax, self.umax)
-            # x[:3] = x[:3] + np.matmul(np.array([[np.cos(x[2]), 0],
-            #                                                       [np.sin(x[2]), 0],
-            #                                                       [0,                    1]]), x[3:])
-        # return x
 
     def step(self, controll):
         self.state = self.step_func(self.state, controll)
+        # self.history["state"].append(np.copy(self.state))
         return self.state
         # action = u[v,yaw]
 
