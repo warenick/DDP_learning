@@ -30,3 +30,11 @@ Also, you need to install additional Python3 packages via pip3
 ```
 pip3 install numpy autograd
 ```
+## Quickstart ##
+
+We have a launch file for starting preconfigured rviz with the demo of DDP.
+```
+roslaunch ddp_learning ddp_plus_rviz.launch
+```
+After running this command, you will see something like this
+![ddp](https://user-images.githubusercontent.com/7687321/138083649-c75b1a58-0373-4277-b804-a382ec4b3672.gif)
