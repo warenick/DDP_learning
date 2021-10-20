@@ -1,0 +1,4 @@
+<launch>
+    <node name="ddp" pkg="ddp_learning" type="run.py"/> 
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ddp_learning)/rviz/ddp.rviz" />
+</launch>
