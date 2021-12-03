@@ -1,9 +1,12 @@
+import torch
+from torch._C import dtype
 import rospy
 import numpy as np
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
 from std_msgs.msg import ColorRGBA
-from copy import deepcopy
+import torch
+# from copy import deepcopy
 # from env.Agent import Agent
 # import math
 
@@ -116,7 +119,13 @@ class Visualizer_ros:
 
     def __yaw2q(self,yaw):
         # conver yaw angle to quaternion msg 
-        return Quaternion(x=0, y=0, z=np.sin(yaw/2), w=np.cos(yaw/2))
+        try:
+            return Quaternion(x=0, y=0, z=np.sin(yaw/2), w=np.cos(yaw/2))
+        except:
+            if "Tensor" in yaw.type():
+                return Quaternion(x=0, y=0, z=torch.sin(yaw/2), w=torch.cos(yaw/2))
+            return Quaternion(x=0, y=0, z=0,w=1)
+
 
     def __q2yaw(self,q):
         # conver quaternion msg to yaw angle
