@@ -8,9 +8,11 @@ class Agent():
                  goal=torch.tensor([10, 10, 0, 0, 0]),
                  type="agent",
                  kinematic_type="differencial",
-                 dt=torch.tensor(0.1),
-                 umax=torch.tensor([0, 0, 0, 5.0, 5.0])):
-        self.state_initial = initial_state
+                 dt=torch.tensor(1.0),
+                 umax=torch.tensor([0, 0, 0, 2.0, 1.0]),
+                 diff_dyn_l = torch.tensor(0.5)):
+        self.state_initial = initial_state+1e-10
+        self.diff_dyn_l = diff_dyn_l
         self.goal = goal
         self.type = type
         self.dt = dt
@@ -18,7 +20,34 @@ class Agent():
         self.umax = umax
         self.history = {}
         self.state = self.state_initial.clone().detach()
+        self.pi = torch.acos(torch.zeros(1)).item() * 2
+        self.init_aux()
+
+    def init_aux(self):
+        self.aux1 = torch.eye(3)
+        self.aux1[2,2]=0
+        # [[1., 0., 0.],
+        #  [0., 1., 0.],
+        #  [0., 0., 0.]]
+
+        self.aux2 = torch.zeros((3,3))
+        self.aux2[1,0] = 1
+        self.aux2[0,1] = -1
+        # [[ 0.,-1., 0.],
+        #  [ 1., 0., 0.],
+        #  [ 0., 0., 0.]])
+        
+        self.aux3 = torch.zeros((3,3))
+        self.aux3[2,2] = 1
+        # [[0., 0., 0.],
+        #  [0., 0., 0.],
+        #  [0., 0., 1.]]
         # self.update_history()
+        self.aux100 = torch.Tensor([1,0,0])
+        self.aux010 = torch.Tensor([0,1,0])
+        self.aux001 = torch.Tensor([0,0,1])
+        self.aux11100 = torch.Tensor([1,1,1,0,0])
+        self.aux00011 = torch.Tensor([0,0,0,1,1])
     
     def update_history(self, controll_arr = None):
         self.history["state"] = torch.zeros((controll_arr.shape[0]+1,controll_arr.shape[1]))
@@ -28,20 +57,66 @@ class Agent():
             # generate nominal trajectory
             for t in range(controll_arr.shape[0]):
                 new_state = self.step_func(self.history["state"][t], controll_arr[t])
-                self.history["state"][t][3:] = new_state.clone().detach()[3:]
-                self.history["state"][t+1][:3] = new_state.clone().detach()[:3]
+                # self.history["state"][t][3:] = new_state.clone().detach()[3:]
+                self.history["state"][t+1] = new_state.clone().detach()
                 self.history["controll"][t] = controll_arr[t].clone().detach()
+        self.state = self.history["state"][-1].clone().detach()
 
     def step_func(self, x, u):
         if "differencial" in self.kinematic_type:
             # u = [0,0,0,v,vyaw]
-            pose = x[:3]
+            # https://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf
             # controll = self.dt*torch.clamp((u[3:]+x[3:]), -self.umax[-1], self.umax[-1])
-            controll = self.dt*torch.clamp((u[3:]+x[3:]), -self.umax[-1], self.umax[-1])
-            matrix = torch.tensor([[torch.cos(x[2]), 0],
-                                   [torch.sin(x[2]), 0],
-                                   [0,               1]])
-            pose = pose + torch.matmul(matrix, controll)
+            vmax = self.umax[3]
+            vyawmax = self.umax[4]
+            # controll = torch.tensor([torch.clamp((u[3]+x[3]), -vmax, vmax),
+            #                         torch.clamp((u[4]+x[4]), -vyawmax, vyawmax)])
+            # Linear velocity
+            V = torch.clamp((u[3]), -vmax, vmax)
+            # Angular velocity of robot
+            Vr = torch.clamp((u[4]), -vyawmax, vyawmax)
+            # Radius of rotation
+            R = V/(Vr+1e-10)
+            # Instantaneous Center of Curvature
+            icc = x[:2]+R*(
+                torch.sin(x[2])*torch.Tensor([-1,0])+
+                torch.cos(x[2])*torch.Tensor([0,1]))
+            matrix = torch.cos(Vr*self.dt)*self.aux1 + \
+                     torch.sin(Vr*self.dt)*self.aux2 + \
+                     self.aux3
+            controll = x[:3] - \
+                            (icc[0]*self.aux100 + \
+                             icc[1]*self.aux010)# torch.cat((x[0]-iccx,x[1]-iccy,x[2]))
+            pose = matrix @ controll + \
+                (icc[0]*self.aux100 + \
+                 icc[1]*self.aux010 + \
+                 Vr*self.dt*self.aux001)
+        # return torch.cat((pose,controll)) 
+        # return pose*torch.eye(3,5)+u*self.aux00011 
+        return pose@torch.eye(3,5)#+u*self.aux00011 
+        # return (pose,controll) 
+
+
+    def step_func2(self, x, u):
+        if "differencial" in self.kinematic_type:
+            # u = [0,0,0,v,vyaw]
+            # controll = self.dt*torch.clamp((u[3:]+x[3:]), -self.umax[-1], self.umax[-1])
+            # controll = torch.tensor([torch.clamp((u[3]+x[3]), -vmax, vmax),
+            #                         torch.clamp((u[4]+x[4]), -vyawmax, vyawmax)])
+            controll = torch.tensor([1,0])* torch.clamp(u[3], -self.umax[3], self.umax[3]) + torch.tensor([0,1])*torch.clamp(u[4], -self.umax[4], self.umax[4])
+            # controll = torch.clamp((u[3:]), -self.umax[-1], self.umax[-1])
+            aux_sin = torch.zeros((3,2))
+            aux_sin[1,0] = 1.
+            aux_cos = torch.zeros((3,2))
+            aux_cos[0,0] = 1.
+            aux_aux = torch.zeros((3,2))
+            aux_aux[-1,-1] = 1.
+            matrix =  torch.cos(x[2]*self.dt)*aux_cos+torch.sin(x[2]*self.dt)*aux_sin+aux_aux
+            # matrix = torch.tensor([[torch.cos(x[2]*self.dt), 0],
+            #                        [torch.sin(x[2]*self.dt), 0],
+            #                        [0,                       1]])
+            pose = x[:3] + matrix@controll
+        # return torch.cat((pose,controll)) 
         return torch.cat((pose,controll)) 
         # return (pose,controll) 
 
@@ -51,17 +126,26 @@ class Agent():
     #     return self.state
     #     # action = u[0,0,0,v,yaw]
 
-    def final_cost(self,state):
+    def final_cost(self,state,k_yaw=torch.tensor(0.1),k_speed=torch.tensor(0.1)):
         # state[x,y,yaw]
         # dist = torch.linalg.norm(state[:3]-self.goal[:3])
+        
         dist = torch.linalg.norm(state[:2]-self.goal[:2])
-        dist_yaw = torch.linalg.norm(state[2]-self.goal[2])
-        # return dist**3 + dist**2+dist
-        return dist**3+dist**2+dist+dist_yaw
+        # dist_yaw = (state[2]-self.goal[2])%self.pi*k_yaw
+        # dist_speed = torch.linalg.norm(state[3]-self.goal[3])*k_speed
+        # dist_speed_yaw = (state[4]-self.goal[4])%self.pi*k_speed*k_yaw
+        return dist**2+ dist**3# + dist**2 + dist
+        # return dist**2# + dist**2 + dist
+        # return dist**3+dist**2+dist+dist_yaw
+        # return dist+dist_yaw+dist_speed+dist_speed_yaw
 
-    def running_cost(self, state, controll):
-        state_cost = self.final_cost(state)
-        controll_cost = torch.sum(torch.square(controll))**3/10.
+    def running_cost(self, state, controll, k_state=1.):
+        state_cost = self.final_cost(state)*k_state
+        controll_cost = torch.sum(torch.pow(controll*self.aux00011,2))
+        # pred = self.final_cost(state)
+        # next = self.final_cost(self.step_func(state,controll))
+
+        # controll_cost = (pred - next)*torch.sum(torch.pow(controll,2))*k_state
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
         return state_cost+controll_cost
@@ -70,14 +154,18 @@ class Agent():
         # [5] Gradient over state
         # x = state.clone().detach().requires_grad_(True)
         x = state.clone().detach().requires_grad_(True)
-        y = self.running_cost(x,controll)
+        u = controll.clone().detach()
+        # fuckfuckfuckfuckfuckfuckfuck
+        # torch.autograd.gradcheck(self.running_cost,(x,u))
+        y = self.running_cost(x,u)
         y.backward()
         return x.grad
 
     def l_u(self, state, controll):
         # [5] Gradient over controll
         u = controll.clone().detach().requires_grad_(True)
-        y = self.running_cost(state,u)
+        x = state.clone().detach()
+        y = self.running_cost(x,u)
         y.backward()
         return u.grad
 
@@ -151,22 +239,38 @@ class Agent():
             for x in range(jacobian.shape[0]):
                 for y in range(jacobian.shape[1]):
                     second[x,y] = torch.autograd.grad(jacobian[x,y], inputs, create_graph=True, allow_unused=True)[wrt[1]]
-        return second
+        return second.clone().detach()
 
 
 if __name__=="__main__":
-    ag =Agent()
-    state = torch.ones(5)
-    controll = torch.ones(5)
-    print("l_x ",ag.l_x(state,controll))
-    print("l_u ",ag.l_u(state,controll))
-    print("l_xx ",ag.l_xx(state,controll))
-    print("l_uu ",ag.l_uu(state,controll))
-    print("l_ux ",ag.l_ux(state,controll))
-    print("lf_x ",ag.lf_x(state))
-    print("lf_xx ",ag.lf_xx(state))
-    print("f_x ",ag.f_x(state,controll))
-    print("f_u ",ag.f_u(state,controll))
-    print("f_ux ",ag.f_ux(state,controll))
-    print("f_uu ",ag.f_uu(state,controll))
-    print("f_xx ",ag.f_xx(state,controll))
+    goal = torch.tensor([10.,10.,0.,0.,0.])
+    dt = torch.tensor(1.0)
+    ag =Agent(goal=goal,dt=dt)
+    state = torch.tensor([0.,0.,0.,0.,0.])
+    controll = torch.tensor([0.,0.,0.,1.,1.])
+    with torch.autograd.detect_anomaly():
+        # print(torch.autograd.gradcheck(ag.l_x,(state,controll)))
+        print("----------------initial---------------------------")
+        print("state ",state)
+        print("controll ",controll)
+        print("goal ",goal)
+        print("dt ",dt)
+        print("----------------dynamics--------------------------")
+        print("step_func ",ag.step_func(state,controll))
+        print("running_cost ",ag.running_cost(state,controll))
+        print("final_cost ",ag.final_cost(state))
+        print("----------------differencials---------------------")
+        print("l_x ",ag.l_x(state,controll))
+        print("l_u ",ag.l_u(state,controll))
+        print("l_xx ",ag.l_xx(state,controll))
+        print("l_uu ",ag.l_uu(state,controll))
+        print("l_ux ",ag.l_ux(state,controll))
+        print("lf_x ",ag.lf_x(state))
+        print("lf_xx ",ag.lf_xx(state))
+        print("f_x ",ag.f_x(state,controll))
+        print("f_u ",ag.f_u(state,controll))
+        print("f_ux ",ag.f_ux(state,controll))
+        print("f_uu ",ag.f_uu(state,controll))
+        print("f_xx ",ag.f_xx(state,controll))
+    # torch.autograd.gradcheck
+    

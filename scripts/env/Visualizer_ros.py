@@ -42,7 +42,7 @@ class Visualizer_ros:
         rospy.init_node("ddp_vis")
         self.pub = rospy.Publisher(
             topic, MarkerArray, queue_size=1)
-        
+
     def pub_agent_state(self, agents_arr):
         msg = MarkerArray()
         for num, agent in enumerate(agents_arr):
