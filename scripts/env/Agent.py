@@ -9,10 +9,8 @@ class Agent():
                  type="agent",
                  kinematic_type="differencial",
                  dt=torch.tensor(1.0),
-                 umax=torch.tensor([2.0, 1.0]),
-                 diff_dyn_l = torch.tensor(0.5)):
-        self.state_initial = initial_state+1e-10
-        self.diff_dyn_l = diff_dyn_l
+                 umax=torch.tensor([2.0, 1.0])):
+        self.state_initial = initial_state#+1e-10
         self.goal = goal
         self.type = type
         self.dt = dt
