@@ -134,14 +134,14 @@ class Agent():
         # dist_yaw = (state[2]-self.goal[2])%self.pi*k_yaw
         # dist_speed = torch.linalg.norm(state[3]-self.goal[3])*k_speed
         # dist_speed_yaw = (state[4]-self.goal[4])%self.pi*k_speed*k_yaw
-        return dist**2#+ dist**3# + dist**2 + dist
+        return dist#dist**2#+ dist**3# + dist**2 + dist
         # return dist**2# + dist**2 + dist
         # return dist**3+dist**2+dist+dist_yaw
         # return dist+dist_yaw+dist_speed+dist_speed_yaw
 
     def running_cost(self, state, controll, k_state=1.):
         state_cost = self.final_cost(state)*k_state
-        controll_cost = torch.sum(torch.pow(controll,2))
+        controll_cost = torch.sum(torch.pow(controll, 2))
         # pred = self.final_cost(state)
         # next = self.final_cost(self.step_func(state,controll))
 

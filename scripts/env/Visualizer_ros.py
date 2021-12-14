@@ -106,7 +106,7 @@ class Visualizer_ros:
                 local_id += 1
 
         self.pub.publish(msg)
-        rospy.sleep(0.05) # just for publish
+        # rospy.sleep(0.001) # just for publish
 
     def __arr2pose(self, arr):
         p = Pose()
