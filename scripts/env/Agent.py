@@ -4,12 +4,12 @@ from os import stat
 import torch
 
 class Agent():
-    def __init__(self, initial_state=torch.tensor([0., 0., 0., 0., 0.]),  # [x, y, yaw, dv, dyaw]
-                 goal=torch.tensor([10, 10, 0, 0, 0]),
+    def __init__(self, initial_state=torch.tensor([0., 0., 0.]),  # [x, y, yaw, dv, dyaw]
+                 goal=torch.tensor([10, 10, 0]),
                  type="agent",
                  kinematic_type="differencial",
                  dt=torch.tensor(1.0),
-                 umax=torch.tensor([0, 0, 0, 2.0, 1.0]),
+                 umax=torch.tensor([2.0, 1.0]),
                  diff_dyn_l = torch.tensor(0.5)):
         self.state_initial = initial_state+1e-10
         self.diff_dyn_l = diff_dyn_l
@@ -22,6 +22,8 @@ class Agent():
         self.state = self.state_initial.clone().detach()
         self.pi = torch.acos(torch.zeros(1)).item() * 2
         self.init_aux()
+        # self.update_history()
+
 
     def init_aux(self):
         self.aux1 = torch.eye(3)
@@ -35,22 +37,22 @@ class Agent():
         self.aux2[0,1] = -1
         # [[ 0.,-1., 0.],
         #  [ 1., 0., 0.],
-        #  [ 0., 0., 0.]])
+        #  [ 0., 0., 0.]]
         
         self.aux3 = torch.zeros((3,3))
         self.aux3[2,2] = 1
         # [[0., 0., 0.],
         #  [0., 0., 0.],
         #  [0., 0., 1.]]
-        # self.update_history()
         self.aux100 = torch.Tensor([1,0,0])
         self.aux010 = torch.Tensor([0,1,0])
         self.aux001 = torch.Tensor([0,0,1])
-        self.aux11100 = torch.Tensor([1,1,1,0,0])
-        self.aux00011 = torch.Tensor([0,0,0,1,1])
+        # self.aux11100 = torch.Tensor([1,1,1,0,0])
+        # self.aux00011 = torch.Tensor([0,0,0,1,1])
+        pass
     
     def update_history(self, controll_arr = None):
-        self.history["state"] = torch.zeros((controll_arr.shape[0]+1,controll_arr.shape[1]))
+        self.history["state"] = torch.zeros((controll_arr.shape[0]+1, self.state_initial.shape[0]))
         self.history["state"][0] = self.state_initial.clone().detach()
         self.history["controll"] = torch.zeros_like(controll_arr)
         if controll_arr is not None:
@@ -67,14 +69,14 @@ class Agent():
             # u = [0,0,0,v,vyaw]
             # https://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf
             # controll = self.dt*torch.clamp((u[3:]+x[3:]), -self.umax[-1], self.umax[-1])
-            vmax = self.umax[3]
-            vyawmax = self.umax[4]
+            vmax = self.umax[0]
+            vyawmax = self.umax[1]
             # controll = torch.tensor([torch.clamp((u[3]+x[3]), -vmax, vmax),
             #                         torch.clamp((u[4]+x[4]), -vyawmax, vyawmax)])
             # Linear velocity
-            V = torch.clamp((u[3]), -vmax, vmax)
+            V = torch.clamp((u[0]), -vmax, vmax)
             # Angular velocity of robot
-            Vr = torch.clamp((u[4]), -vyawmax, vyawmax)
+            Vr = torch.clamp((u[1]), -vyawmax, vyawmax)
             # Radius of rotation
             R = V/(Vr+1e-10)
             # Instantaneous Center of Curvature
@@ -93,7 +95,7 @@ class Agent():
                  Vr*self.dt*self.aux001)
         # return torch.cat((pose,controll)) 
         # return pose*torch.eye(3,5)+u*self.aux00011 
-        return pose@torch.eye(3,5)#+u*self.aux00011 
+        return pose#+u*self.aux00011 
         # return (pose,controll) 
 
 
@@ -134,14 +136,14 @@ class Agent():
         # dist_yaw = (state[2]-self.goal[2])%self.pi*k_yaw
         # dist_speed = torch.linalg.norm(state[3]-self.goal[3])*k_speed
         # dist_speed_yaw = (state[4]-self.goal[4])%self.pi*k_speed*k_yaw
-        return dist**2+ dist**3# + dist**2 + dist
+        return dist**2#+ dist**3# + dist**2 + dist
         # return dist**2# + dist**2 + dist
         # return dist**3+dist**2+dist+dist_yaw
         # return dist+dist_yaw+dist_speed+dist_speed_yaw
 
     def running_cost(self, state, controll, k_state=1.):
         state_cost = self.final_cost(state)*k_state
-        controll_cost = torch.sum(torch.pow(controll*self.aux00011,2))
+        controll_cost = torch.sum(torch.pow(controll,2))
         # pred = self.final_cost(state)
         # next = self.final_cost(self.step_func(state,controll))
 
@@ -231,7 +233,7 @@ class Agent():
         # print(jacobian[0])
         if wrt is not None:
             jacobian = jacobian[wrt[0]]
-            last_shape = inputs[wrt[0]].shape[0]
+            last_shape = inputs[wrt[1]].shape[0]
         else:
             last_shape = inputs.shape[0]
         second = torch.zeros((jacobian.shape[0], jacobian.shape[1], last_shape))
@@ -243,11 +245,11 @@ class Agent():
 
 
 if __name__=="__main__":
-    goal = torch.tensor([10.,10.,0.,0.,0.])
+    goal = torch.tensor([10.,10.,0.])
     dt = torch.tensor(1.0)
     ag =Agent(goal=goal,dt=dt)
-    state = torch.tensor([0.,0.,0.,0.,0.])
-    controll = torch.tensor([0.,0.,0.,1.,1.])
+    state = torch.tensor([0.,0.,0.])
+    controll = torch.tensor([1.,1.])
     with torch.autograd.detect_anomaly():
         # print(torch.autograd.gradcheck(ag.l_x,(state,controll)))
         print("----------------initial---------------------------")
@@ -269,8 +271,8 @@ if __name__=="__main__":
         print("lf_xx ",ag.lf_xx(state))
         print("f_x ",ag.f_x(state,controll))
         print("f_u ",ag.f_u(state,controll))
-        print("f_ux ",ag.f_ux(state,controll))
         print("f_uu ",ag.f_uu(state,controll))
         print("f_xx ",ag.f_xx(state,controll))
+        print("f_ux ",ag.f_ux(state,controll))
     # torch.autograd.gradcheck
     

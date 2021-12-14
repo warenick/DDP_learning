@@ -6,17 +6,14 @@ from CDDP import CDDP
 from DDP import DDP 
 
 if __name__=="__main__":
-    dt = torch.tensor(0.1)
+    dt = torch.tensor(0.5)
     horizon = 10
     epochs = 10
-    gradient_rate = 0.1
+    gradient_rate = 0.5
 
     viz = Visualizer_ros()
-    agent = Agent(goal=torch.tensor([2, 1, 0, 0., 0.]), dt=dt) # [x,y,yaw,V,Vyaw]
-    u = torch.zeros((horizon,agent.state.shape[-1])) # [[0,0,0,V,Vyaw],[0,0,0,V,Vyaw],...]
-    u[:,-2]=2. # set initial V
-    u[:,-1]=-1. # set initial Vyaw
-    state_dim = agent.state.shape[-1]
+    agent = Agent(goal=torch.tensor([2, 5, 0]), dt=dt) # [x,y,yaw,V,Vyaw]
+    u = torch.ones((horizon,2)) # [[V,Vyaw],[V,Vyaw],...]
     agent.update_history(u) # calc nominal trajectory(->agent.history)    
     viz.pub_agent_state([agent]) # just vis in rviz
     ddp = CDDP(agent, gradient_rate) # init differencial functions

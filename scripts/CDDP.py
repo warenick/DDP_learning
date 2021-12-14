@@ -56,8 +56,8 @@ class CDDP:
             Q_x = l_x(x,u) + f_x_t.T @ b[t+1]
             Q_u = l_u(x,u) + f_u_t.T @ b[t+1]
             Q_xx = l_xx(x,u) + f_x_t.T @ A[t+1] @ f_x_t + b[t+1] @ f_xx(x,u)
-            Q_uu = l_uu(x,u) + f_u_t.T @ A[t+1] @ f_u_t + b[t+1] @ f_uu(x,u)
-            Q_ux = l_ux(x,u) + f_u_t.T @ A[t+1] @ f_x_t + b[t+1] @ f_ux(x,u)
+            Q_uu = l_uu(x,u) + f_u_t.T @ A[t+1] @ f_u_t# + b[t+1] @ f_uu(x,u)
+            Q_ux = l_ux(x,u) + f_u_t.T @ A[t+1] @ f_x_t# + b[t+1] @ f_ux(x,u)
             try:
                 inv_Q_uu = torch.linalg.inv(Q_uu)
             except:
