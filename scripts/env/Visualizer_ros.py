@@ -42,7 +42,7 @@ class Visualizer_ros:
         rospy.init_node("ddp_vis")
         self.pub = rospy.Publisher(
             topic, MarkerArray, queue_size=1)
-        
+
     def pub_agent_state(self, agents_arr):
         msg = MarkerArray()
         for num, agent in enumerate(agents_arr):
@@ -106,7 +106,7 @@ class Visualizer_ros:
                 local_id += 1
 
         self.pub.publish(msg)
-        rospy.sleep(0.05) # just for publish
+        # rospy.sleep(0.001) # just for publish
 
     def __arr2pose(self, arr):
         p = Pose()
