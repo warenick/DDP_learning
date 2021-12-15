@@ -36,5 +36,6 @@ We have a launch file for starting preconfigured rviz with the demo of DDP.
 ```
 roslaunch ddp_learning ddp_plus_rviz.launch
 ```
-After running this command, you will see something like this
+After running this command, you will see something like this.
+DDP equations taken from https://en.wikipedia.org/wiki/Differential_dynamic_programming and basic code realisation from https://github.com/neka-nat/ddp-gym
 ![ddp](https://user-images.githubusercontent.com/7687321/138083649-c75b1a58-0373-4277-b804-a382ec4b3672.gif)
