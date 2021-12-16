@@ -13,10 +13,10 @@ if __name__=="__main__":
     regularisation = 0.95
     # TODO: generate from config file
     ddp = DDP(gradient_rate, regularisation)
-    agent1 = Agent(initial_state=[-0.5, 0.5, 0],  goal=[-2, 3, 0],  dt=dt) 
-    agent2 = Agent(initial_state=[0.5, 0.5, 0],   goal=[2, 3, 0],   dt=dt) 
-    agent3 = Agent(initial_state=[0.5, -0.5, 0],  goal=[2, -3, 0],  dt=dt) 
-    agent4 = Agent(initial_state=[-0.5, -0.5, 0], goal=[-2, -3, 0], dt=dt) 
+    agent1 = Agent(initial_state=[-0.5, 0.5, 0],  goal=[-2, 3, 0],  dt=dt, name="1") 
+    agent2 = Agent(initial_state=[0.5, 0.5, 0],   goal=[2, 3, 0],   dt=dt, name="2") 
+    agent3 = Agent(initial_state=[0.5, -0.5, 0],  goal=[2, -3, 0],  dt=dt, name="3") 
+    agent4 = Agent(initial_state=[-0.5, -0.5, 0], goal=[-2, -3, 0], dt=dt, name="4") 
     crowd = Crowd(visualizer=viz)
     crowd.add_agent(agent1, ddp)
     crowd.add_agent(agent2, ddp)
@@ -25,7 +25,7 @@ if __name__=="__main__":
 
     import time
     t1 = time.time()
-    crowd.optimize(epochs, visualize=True)
+    crowd.optimize(epochs, visualize=True) # visualisation takes about 3-5% of time
     print(f"calculation time: {(time.time()-t1):.3}s",)
     
     crowd.visualaze()

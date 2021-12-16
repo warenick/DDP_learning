@@ -8,8 +8,10 @@ class Agent():
                  kinematic_type="differencial",
                  dt=0.4,
                  umax=[2.0, 1.0],
-                 initial_controll = None):
+                 initial_controll = None,
+                 name="Bert"):
 
+        self.name = name
         self.state = initial_state if isinstance(initial_state, torch.Tensor) else torch.tensor(initial_state)
         self.goal = goal if isinstance(goal, torch.Tensor) else torch.tensor(goal)
         self.type = type
