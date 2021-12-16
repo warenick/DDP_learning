@@ -2,7 +2,6 @@
 from env.Agent import Agent
 from env.Visualizer_ros import Visualizer_ros
 import torch
-from CDDP import CDDP 
 from DDP import DDP 
 
 if __name__=="__main__":
@@ -15,7 +14,7 @@ if __name__=="__main__":
     agent = Agent(goal=torch.tensor([-2, 5, 0]), dt=dt) # [x,y,yaw,V,Vyaw]
     agent.update_history(torch.ones((horizon,2))) # calc nominal trajectory(->agent.history)    # u =  # [[V,Vyaw],[V,Vyaw],...]
     viz.pub_agent_state([agent]) # just vis in rviz
-    ddp = CDDP(agent, gradient_rate, regularisation)
+    ddp = DDP(agent, gradient_rate, regularisation)
     for epoch in range(epochs):
         k_seq, kk_seq                                     = ddp.backward(agent.history["state"],agent.history["controll"])
         agent.history["state"], agent.history["controll"] = ddp.forward(agent.history["state"],agent.history["controll"], k_seq, kk_seq)
