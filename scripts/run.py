@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 from env.Agent import Agent
 from env.Visualizer_ros import Visualizer_ros
-import torch
 from DDP import DDP 
 
 if __name__=="__main__":
@@ -13,7 +12,6 @@ if __name__=="__main__":
     regularisation = 0.95
     ddp = DDP(gradient_rate, regularisation)
     agent = Agent(goal=[-2, 5, 0], dt=dt) # state = [x,y,yaw]
-    agent.calc_trajectory(controll_arr = torch.ones((horizon,2))) # calc nominal trajectory(->agent.prediction)  # u =  # [[V,Vyaw],[V,Vyaw],...]
     agent.prediction["state"], agent.prediction["controll"] = ddp.optimize(agent,epochs,viz) # optimize trajectory
     # viz.pub_agent_state([agent])
     exit()

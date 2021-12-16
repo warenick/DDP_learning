@@ -7,7 +7,8 @@ class Agent():
                  type="agent",
                  kinematic_type="differencial",
                  dt=1.0,
-                 umax=[2.0, 1.0]):
+                 umax=[2.0, 1.0],
+                 initial_controll = None):
 
         self.state = initial_state if isinstance(initial_state, torch.Tensor) else torch.tensor(initial_state)
         self.goal = goal if isinstance(goal, torch.Tensor) else torch.tensor(goal)
@@ -18,6 +19,11 @@ class Agent():
         self.prediction = {}
         self.pi = torch.acos(torch.zeros(1)).item() * 2
         self.init_aux()
+        
+        # calc nominal trajectory(->agent.prediction)  # u =  # [[V,Vyaw],[V,Vyaw],...]
+        if initial_controll is None:
+            initial_controll = torch.rand((10,2))
+        self.calc_trajectory(initial_controll) 
         # self.update_history()
 
 
