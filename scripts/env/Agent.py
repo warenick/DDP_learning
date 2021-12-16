@@ -111,11 +111,22 @@ class Agent():
         return torch.cat((pose,controll)) 
         # return (pose,controll) 
 
-    # def step(self, controll):
-    #     self.state = self.step_func(self.state, controll)
-    #     # self.prediction["state"].append(np.copy(self.state))
-    #     return self.state
-    #     # action = u[0,0,0,v,yaw]
+    def step(self, controll = None):
+        controll = controll if controll is not None else self.prediction["controll"][0]
+        self.state = self.step_func(self.state, controll)
+        # slide the window
+        self.prediction["controll"] = torch.cat((
+            self.prediction["controll"][1:],
+            self.prediction["controll"][-1][None]
+            ))
+        self.prediction["state"] = torch.cat((
+            self.state[None],
+            self.prediction["state"][2:],
+            self.step_func(self.prediction["state"][-1], self.prediction["controll"][-1])[None]
+            ))
+        
+        return self.state
+    #     # action = u[v,yaw]
 
     def final_cost(self,state, k_yaw=torch.tensor(0.1)):
         # state[x,y,yaw]
@@ -246,6 +257,7 @@ if __name__=="__main__":
         print("step_func ",ag.step_func(state,controll))
         print("running_cost ",ag.running_cost(state,controll))
         print("final_cost ",ag.final_cost(state))
+        print("step ",ag.step())
         print("----------------differencials---------------------")
         print("l_x ",ag.l_x(state,controll))
         print("l_u ",ag.l_u(state,controll))

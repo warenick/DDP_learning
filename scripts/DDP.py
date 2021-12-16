@@ -14,9 +14,9 @@ class DDP:
         for _ in range(num_epochs):
             k_seq, kk_seq     = self.backward(states, controlls, agent)
             states, controlls = self.forward(states, controlls, k_seq, kk_seq, agent.step_func)
-            self.gradient_rate = self.gradient_rate*self.regularisation # regularisation gradient rate
+            self.gradient_rate = self.gradient_rate*self.regularisation
             if visualizer is not None:
-                visualizer.pub_agent_state([agent]) # just vis in rviz
+                visualizer.pub_agent_state([agent])
         return states, controlls
     
     def backward(self, x_seq, u_seq, agent):
@@ -53,10 +53,10 @@ class DDP:
             Q_xx = l_xx(x,u) + f_x_t.T @ A[t+1] @ f_x_t + b[t+1] @ f_xx(x,u)
             Q_ux = l_ux(x,u) + f_u_t.T @ A[t+1] @ f_x_t# + b[t+1] @ f_ux(x,u)
             Q_uu = l_uu(x,u) + f_u_t.T @ A[t+1] @ f_u_t# + b[t+1] @ f_uu(x,u)
-            try:
-                inv_Q_uu = torch.linalg.inv(Q_uu)
-            except:
-                inv_Q_uu = torch.zeros_like(Q_uu)
+            # try:
+            inv_Q_uu = torch.linalg.inv(Q_uu) # potencially danger operation
+            # except:
+            #     inv_Q_uu = torch.zeros_like(Q_uu)
             k = -inv_Q_uu @ Q_u
             kk = -inv_Q_uu @ Q_ux
             A[t] = Q_xx + kk.T@Q_uu@kk + Q_ux.T@kk + kk.T@Q_ux
@@ -72,6 +72,6 @@ class DDP:
         u_seq_hat = u_seq#.clone().detach() # not sure that clone().detach() is necessary
         for t in range(len(u_seq)):
             control = u_seq[t] + (kk_seq[t] @ (x_seq_hat[t] - x_seq[t]) + k_seq[t])*self.gradient_rate
-            u_seq_hat[t] =torch.clamp(control, -umax[-1], umax[-1]) # it is necessary to clamp here
+            u_seq_hat[t] =torch.clamp(control, -umax[-1], umax[-1]) # it is necessary to clamp here. TODO: clamp both V and Vyaw
             x_seq_hat[t + 1] = step_func(x_seq_hat[t], u_seq_hat[t])
         return x_seq_hat, u_seq_hat

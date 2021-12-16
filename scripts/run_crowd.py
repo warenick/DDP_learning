@@ -8,7 +8,6 @@ if __name__=="__main__":
     viz = Visualizer_ros()
     dt = 0.4
     # horizon = 10 # 10 by default
-    epochs = 30
     gradient_rate = 1.0
     regularisation = 0.95
     # TODO: generate from config file
@@ -25,7 +24,7 @@ if __name__=="__main__":
 
     import time
     t1 = time.time()
-    crowd.optimize(epochs, visualize=True) # visualisation takes about 3-5% of time
+    crowd.optimize(epochs=30, visualize=True) # visualisation takes about 3-5% of time
     print(f"calculation time: {(time.time()-t1):.3}s",)
     
     crowd.visualaze()
