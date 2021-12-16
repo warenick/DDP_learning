@@ -3,21 +3,16 @@ import torch
 class DDP:
     # ddp with small diferences from cddp article http://ieeexplore.ieee.org/document/7989086/
     def __init__(self, agent, gradient_rate = 1., regularisation=0.95) -> None:
-        self.regularisation = regularisation
-        self.state_dim = agent.state.shape[-1]
         self.gradient_rate = gradient_rate
-        pred_time = len(agent.history["state"]) - 1
-        self.umax = agent.umax
-        self.dt = agent.dt
-        self.v_x = [torch.zeros(self.state_dim)+1e-10 for _ in range(pred_time + 1)]
-        self.v_xx = [torch.zeros((self.state_dim, self.state_dim))+1e-10 for _ in range(pred_time + 1)]
+        self.regularisation = regularisation
         self.agent = agent
 
     def backward(self, x_seq, u_seq):
         pred_time = len(u_seq)
+        state_dim = x_seq.shape[-1]
         # that definition here just for readability
-        b = [torch.zeros(self.state_dim)+1e-10 for _ in range(pred_time + 1)]
-        A = [torch.zeros((self.state_dim, self.state_dim))+1e-10 for _ in range(pred_time + 1)]
+        b = [torch.zeros(state_dim)+1e-10 for _ in range(pred_time + 1)]
+        A = [torch.zeros((state_dim, state_dim))+1e-10 for _ in range(pred_time + 1)]
         lf_x  = self.agent.lf_x
         lf_xx = self.agent.lf_xx
         l_x   = self.agent.l_x
@@ -61,11 +56,11 @@ class DDP:
         return k_seq, kk_seq
 
     def forward(self, x_seq, u_seq, k_seq, kk_seq):
-        x_seq_hat = x_seq.clone().detach()
-        u_seq_hat = u_seq.clone().detach()
+        x_seq_hat = x_seq#.clone().detach()
+        u_seq_hat = u_seq#.clone().detach()
         for t in range(len(u_seq)):
             control = u_seq[t] + (kk_seq[t] @ (x_seq_hat[t] - x_seq[t]) + k_seq[t])*self.gradient_rate
-            u_seq_hat[t] =torch.clamp(control, -self.umax[-1], self.umax[-1])
+            u_seq_hat[t] =torch.clamp(control, -self.agent.umax[-1], self.agent.umax[-1])
             x_seq_hat[t + 1] = self.agent.step_func(x_seq_hat[t], u_seq_hat[t])
         # regularisation gradient rate decrising
         self.gradient_rate = self.gradient_rate*self.regularisation

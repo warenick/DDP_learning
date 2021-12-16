@@ -10,14 +10,13 @@ class Agent():
                  kinematic_type="differencial",
                  dt=torch.tensor(1.0),
                  umax=torch.tensor([2.0, 1.0])):
-        self.state_initial = initial_state#+1e-10
+        self.state = initial_state
         self.goal = goal
         self.type = type
         self.dt = dt
         self.kinematic_type = kinematic_type
         self.umax = umax
-        self.history = {}
-        self.state = self.state_initial.clone().detach()
+        self.prediction = {}
         self.pi = torch.acos(torch.zeros(1)).item() * 2
         self.init_aux()
         # self.update_history()
@@ -50,17 +49,17 @@ class Agent():
         pass
     
     def update_history(self, controll_arr = None):
-        self.history["state"] = torch.zeros((controll_arr.shape[0]+1, self.state_initial.shape[0]))
-        self.history["state"][0] = self.state_initial.clone().detach()
-        self.history["controll"] = torch.zeros_like(controll_arr)
+        self.prediction["state"] = torch.zeros((controll_arr.shape[0]+1, self.state.shape[0]))
+        self.prediction["state"][0] = self.state.clone().detach()
+        self.prediction["controll"] = torch.zeros_like(controll_arr)
         if controll_arr is not None:
             # generate nominal trajectory
             for t in range(controll_arr.shape[0]):
-                new_state = self.step_func(self.history["state"][t], controll_arr[t])
-                # self.history["state"][t][3:] = new_state.clone().detach()[3:]
-                self.history["state"][t+1] = new_state.clone().detach()
-                self.history["controll"][t] = controll_arr[t].clone().detach()
-        self.state = self.history["state"][-1].clone().detach()
+                new_state = self.step_func(self.prediction["state"][t], controll_arr[t])
+                # self.prediction["state"][t][3:] = new_state.clone().detach()[3:]
+                self.prediction["state"][t+1] = new_state.clone().detach()
+                self.prediction["controll"][t] = controll_arr[t].clone().detach()
+        # self.state = self.prediction["state"][-1].clone().detach()
 
     def step_func(self, x, u):
         if "differencial" in self.kinematic_type:
@@ -122,7 +121,7 @@ class Agent():
 
     # def step(self, controll):
     #     self.state = self.step_func(self.state, controll)
-    #     # self.history["state"].append(np.copy(self.state))
+    #     # self.prediction["state"].append(np.copy(self.state))
     #     return self.state
     #     # action = u[0,0,0,v,yaw]
 

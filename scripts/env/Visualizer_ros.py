@@ -48,18 +48,18 @@ class Visualizer_ros:
         for num, agent in enumerate(agents_arr):
             # INITIAL STATE
             # agent.type need to be in MARKER_CFG
-            agent_marker = Marker(
-                id=num,
-                type=Marker.SPHERE,
-                action=Marker.ADD,
-                scale=MARKER_CFG[agent.type]["scale"],
-                color=MARKER_CFG[agent.type]["history_color"],
-                pose=self.__arr2pose(agent.state_initial),
-                ns = "initial_state"
-            )
-            agent_marker.header.frame_id = self.frame
-            agent_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
-            msg.markers.append(agent_marker)
+            # agent_marker = Marker(
+            #     id=num,
+            #     type=Marker.SPHERE,
+            #     action=Marker.ADD,
+            #     scale=MARKER_CFG[agent.type]["scale"],
+            #     color=MARKER_CFG[agent.type]["history_color"],
+            #     pose=self.__arr2pose(agent.state_initial),
+            #     ns = "initial_state"
+            # )
+            # agent_marker.header.frame_id = self.frame
+            # agent_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
+            # msg.markers.append(agent_marker)
             # STATE
             # agent.type need to be in MARKER_CFG
             agent_marker = Marker(
@@ -90,7 +90,7 @@ class Visualizer_ros:
     
             # HISTORY
             local_id = 0
-            for state in agent.history["state"]:
+            for state in agent.prediction["state"]:
                 history_marker = Marker(
                     id=local_id,
                     type=Marker.SPHERE,
