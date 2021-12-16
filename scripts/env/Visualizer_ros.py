@@ -88,7 +88,7 @@ class Visualizer_ros:
             agent_goal_marker.pose.position.z = agent_goal_marker.scale.z/2.
             msg.markers.append(agent_goal_marker)
     
-            # HISTORY
+            # PREDICTION
             local_id = 0
             for state in agent.prediction["state"]:
                 history_marker = Marker(
@@ -98,7 +98,7 @@ class Visualizer_ros:
                     scale=MARKER_CFG[agent.type]["scale"],
                     color=MARKER_CFG[agent.type]["history_color"],
                     pose=self.__arr2pose(state),
-                    ns = "history state"
+                    ns = "predicted states"
                 )
                 history_marker.header.frame_id = self.frame
                 history_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
