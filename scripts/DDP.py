@@ -6,6 +6,16 @@ class DDP:
         self.gradient_rate = gradient_rate
         self.regularisation = regularisation
 
+    def optimize(self, agent, num_epochs=1,visualizer=None):
+        states = agent.prediction["state"]      #.clone().detach() # not sure that clone().detach() is necessary
+        controlls = agent.prediction["controll"]#.clone().detach() # not sure that clone().detach() is necessary
+        for _ in range(num_epochs):
+            k_seq, kk_seq     = self.backward(states, controlls, agent)
+            states, controlls = self.forward(states, controlls, k_seq, kk_seq, agent.step_func)
+            if visualizer is not None:
+                visualizer.pub_agent_state([agent]) # just vis in rviz
+        return states, controlls
+    
     def backward(self, x_seq, u_seq, agent):
         pred_time = len(u_seq)
         state_dim = x_seq.shape[-1]

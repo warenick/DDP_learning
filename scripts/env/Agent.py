@@ -1,19 +1,16 @@
-# import numpy as np
-# import autograd.numpy as np
-from os import stat
 import torch
+from torch.functional import Tensor
 
 class Agent():
     def __init__(self, initial_state=torch.tensor([0., 0., 0.]),  # [x, y, yaw, dv, dyaw]
                  goal=torch.tensor([10, 10, 0]),
                  type="agent",
                  kinematic_type="differencial",
-                 dt=torch.tensor(1.0),
-                 umax=torch.tensor([2.0, 1.0]),
-                 traj_opt = None):
-        self.state = initial_state
-        self.traj_opt = traj_opt
-        self.goal = goal
+                 dt=1.0,
+                 umax=[2.0, 1.0]):
+
+        self.state = initial_state if isinstance(initial_state, torch.Tensor) else torch.tensor(initial_state)
+        self.goal = goal if isinstance(goal, torch.Tensor) else torch.tensor(goal)
         self.type = type
         self.dt = dt
         self.kinematic_type = kinematic_type
@@ -51,6 +48,7 @@ class Agent():
         pass
     
     def calc_trajectory(self, controll_arr):
+        controll_arr = controll_arr if isinstance(controll_arr, torch.Tensor) else torch.tensor(controll_arr)
         self.prediction["state"] = torch.zeros((controll_arr.shape[0]+1, self.state.shape[0]))
         self.prediction["controll"] = controll_arr
         # generate nominal trajectory
@@ -113,10 +111,10 @@ class Agent():
 
     def final_cost(self,state, k_yaw=torch.tensor(0.1)):
         # state[x,y,yaw]
-        dist = torch.linalg.norm(state[:2]-self.goal[:2])
-        # dist_yaw = (state[2]-self.goal[2])%self.pi*k_yaw
-        return dist
-        # return dist+dist_yaw
+        evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])
+        # angle_dist = (state[2]-self.goal[2])%self.pi*k_yaw
+        return evclidian_dist
+        # return evclidian_dist+angle_dist
 
     def running_cost(self, state, controll, k_state=1.):
         state_cost = self.final_cost(state)*k_state
@@ -224,8 +222,8 @@ class Agent():
 
 # tests
 if __name__=="__main__":
-    goal = torch.tensor([10.,10.,0.])
-    dt = torch.tensor(1.0)
+    goal = [10.,10.,0.]
+    dt = 1.0
     ag =Agent(goal=goal,dt=dt)
     state = torch.tensor([0.,0.,0.])
     controll = torch.tensor([1.,1.])
