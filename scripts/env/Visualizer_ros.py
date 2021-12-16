@@ -69,7 +69,7 @@ class Visualizer_ros:
                 scale=MARKER_CFG[agent.type]["scale"],
                 color=MARKER_CFG[agent.type]["color"],
                 pose=self.__arr2pose(agent.state),
-                ns = "state"
+                ns = "state "+str(num)
             )
             agent_marker.header.frame_id = self.frame
             agent_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
@@ -82,7 +82,7 @@ class Visualizer_ros:
                 scale=MARKER_CFG[agent.type+"_goal"]["scale"],
                 color=MARKER_CFG[agent.type+"_goal"]["color"],
                 pose=self.__arr2pose(agent.goal),
-                ns = "goal"
+                ns = "goal "+str(num)
             )
             agent_goal_marker.header.frame_id = self.frame
             agent_goal_marker.pose.position.z = agent_goal_marker.scale.z/2.
@@ -98,7 +98,7 @@ class Visualizer_ros:
                     scale=MARKER_CFG[agent.type]["scale"],
                     color=MARKER_CFG[agent.type]["history_color"],
                     pose=self.__arr2pose(state),
-                    ns = "predicted states"
+                    ns = "predicted states "+str(num)
                 )
                 history_marker.header.frame_id = self.frame
                 history_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.

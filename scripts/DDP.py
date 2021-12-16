@@ -3,15 +3,18 @@ import torch
 class DDP:
     # ddp with small diferences from cddp article http://ieeexplore.ieee.org/document/7989086/
     def __init__(self, gradient_rate = 1., regularisation=0.95) -> None:
+        self.initial_gradient_rate = gradient_rate
         self.gradient_rate = gradient_rate
         self.regularisation = regularisation
 
     def optimize(self, agent, num_epochs=1,visualizer=None):
+        self.gradient_rate = self.initial_gradient_rate
         states = agent.prediction["state"]      #.clone().detach() # not sure that clone().detach() is necessary
         controlls = agent.prediction["controll"]#.clone().detach() # not sure that clone().detach() is necessary
         for _ in range(num_epochs):
             k_seq, kk_seq     = self.backward(states, controlls, agent)
             states, controlls = self.forward(states, controlls, k_seq, kk_seq, agent.step_func)
+            self.gradient_rate = self.gradient_rate*self.regularisation # regularisation gradient rate
             if visualizer is not None:
                 visualizer.pub_agent_state([agent]) # just vis in rviz
         return states, controlls
@@ -71,6 +74,4 @@ class DDP:
             control = u_seq[t] + (kk_seq[t] @ (x_seq_hat[t] - x_seq[t]) + k_seq[t])*self.gradient_rate
             u_seq_hat[t] =torch.clamp(control, -umax[-1], umax[-1]) # it is necessary to clamp here
             x_seq_hat[t + 1] = step_func(x_seq_hat[t], u_seq_hat[t])
-        # regularisation gradient rate
-        self.gradient_rate = self.gradient_rate*self.regularisation
         return x_seq_hat, u_seq_hat
