@@ -6,7 +6,7 @@ class Agent():
                  goal=torch.tensor([10, 10, 0]),
                  type="agent",
                  kinematic_type="differencial",
-                 dt=1.0,
+                 dt=0.4,
                  umax=[2.0, 1.0],
                  initial_controll = None):
 
