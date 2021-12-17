@@ -130,7 +130,8 @@ class Agent():
 
     def final_cost(self,state, k_yaw=torch.tensor(0.1)):
         # state[x,y,yaw]
-        evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])
+        evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])**2
+        # evclidian_dist = evclidian_dist if evclidian_dist>0.3 else evclidian_dist*0.3 # dirty fix oscilation near the goal
         # angle_dist = (state[2]-self.goal[2])%self.pi*k_yaw
         return evclidian_dist
         # return evclidian_dist+angle_dist
