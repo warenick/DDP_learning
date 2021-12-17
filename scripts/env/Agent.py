@@ -146,7 +146,7 @@ class Agent():
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
         return state_cost+controll_cost
-    
+
     def l_x(self, state, controll):
         # [3] Gradient over state
         # x = state.clone().detach().requires_grad_(True)
@@ -157,6 +157,17 @@ class Agent():
         y = self.running_cost(x,u)
         y.backward()
         return x.grad
+
+    def l_x_l_u(self, state, controll):
+        # [3] Gradient over state, [3] Gradient over controll
+        # x = state.clone().detach().requires_grad_(True)
+        x = state.clone().detach().requires_grad_(True)
+        u = controll.clone().detach().requires_grad_(True)
+        # fuckfuckfuckfuckfuckfuckfuck
+        # torch.autograd.gradcheck(self.running_cost,(x,u))
+        y = self.running_cost(x,u)
+        y.backward()
+        return x.grad, u.grad
 
     def l_u(self, state, controll):
         # [2] Gradient over controll
@@ -172,6 +183,11 @@ class Agent():
         y = self.final_cost(x)
         y.backward()
         return x.grad
+
+    def f_x_f_u(self,state,controll):
+        # [3,3] Jacobian over state, [3,3] Jacobian over controll
+        out_jacobian = torch.autograd.functional.jacobian(self.step_func,(state,controll)) # [0] - over state, [1] - over controll
+        return out_jacobian[0], out_jacobian[1] # [0] -> over state
 
     def f_x(self,state,controll):
         # [3,3] Jacobian over state
@@ -191,6 +207,11 @@ class Agent():
         # [3,3] Hessian over state
         hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
         return hessian_out[0][0] # [0][0] -> x,x
+
+    def l_xx_l_uu_l_ux(self, state, controll):
+        # [3,3] Hessian over state, [2,2] Hessian over controll, [2,3] Hessian over controll and state
+        hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
+        return hessian_out[0][0], hessian_out[1][1], hessian_out[1][0] # [0][0] -> x,x
 
     def l_uu(self, state, controll):
         # [2,2] Hessian over controll
@@ -261,13 +282,16 @@ if __name__=="__main__":
         print("----------------differencials---------------------")
         print("l_x ",ag.l_x(state,controll))
         print("l_u ",ag.l_u(state,controll))
+        print("l_x_l_u",ag.l_x_l_u(state,controll))
         print("l_xx ",ag.l_xx(state,controll))
         print("l_uu ",ag.l_uu(state,controll))
         print("l_ux ",ag.l_ux(state,controll))
+        print("l_xx_l_uu_l_ux ",ag.l_xx_l_uu_l_ux(state,controll))
         print("lf_x ",ag.lf_x(state))
         print("lf_xx ",ag.lf_xx(state))
         print("f_x ",ag.f_x(state,controll))
         print("f_u ",ag.f_u(state,controll))
+        print("f_x_f_u ",ag.f_x_f_u(state,controll))
         print("f_uu ",ag.f_uu(state,controll))
         print("f_xx ",ag.f_xx(state,controll))
         print("f_ux ",ag.f_ux(state,controll))

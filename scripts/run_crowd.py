@@ -24,7 +24,7 @@ if __name__=="__main__":
 
     import time
     t1 = time.time()
-    crowd.optimize(epochs=30, visualize=True) # visualisation takes about 3-5% of time
+    crowd.optimize(epochs=30, visualize=False)
     print(f"calculation time: {(time.time()-t1):.3}s",)
     
     crowd.visualaze()

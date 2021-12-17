@@ -25,34 +25,40 @@ class DDP:
         # that definition here just for readability
         b = [torch.zeros(state_dim)+1e-10 for _ in range(pred_time + 1)]
         A = [torch.zeros((state_dim, state_dim))+1e-10 for _ in range(pred_time + 1)]
-        lf_x  = agent.lf_x
-        lf_xx = agent.lf_xx
-        l_x   = agent.l_x
-        l_u   = agent.l_u
-        l_xx  = agent.l_xx
-        l_uu  = agent.l_uu
-        l_ux  = agent.l_ux
-        f_x   = agent.f_x
-        f_u   = agent.f_u
+        # lf_x  = agent.lf_x
+        # lf_xx = agent.lf_xx
+        
+        # l_x   = agent.l_x
+        # l_u   = agent.l_u
+        # l_x_l_u = agent.l_x_l_u
+        # l_xx  = agent.l_xx
+        # l_uu  = agent.l_uu
+        # l_ux  = agent.l_ux
+        # f_x   = agent.f_x
+        # f_u   = agent.f_u
+        # f_x_f_u = agent.f_x_f_u
         f_xx  = agent.f_xx
         # f_uu  = agent.f_uu
         # f_ux  = agent.f_ux
         # that definition here just for readability
         
 
-        b[-1] = lf_x(x_seq[-1])
-        A[-1] = lf_xx(x_seq[-1])
+        b[-1] = agent.lf_x(x_seq[-1])
+        A[-1] = agent.lf_xx(x_seq[-1])
         k_seq = []
         kk_seq = []
         for t in range(pred_time - 1, -1, -1):
+            # calc derivatives
             x,u = (x_seq[t], u_seq[t]) # state and controll at the current time step
-            f_x_t = f_x(x,u)
-            f_u_t = f_u(x,u)
-            Q_x = l_x(x,u) + f_x_t.T @ b[t+1]
-            Q_u = l_u(x,u) + f_u_t.T @ b[t+1]
-            Q_xx = l_xx(x,u) + f_x_t.T @ A[t+1] @ f_x_t + b[t+1] @ f_xx(x,u)
-            Q_ux = l_ux(x,u) + f_u_t.T @ A[t+1] @ f_x_t# + b[t+1] @ f_ux(x,u)
-            Q_uu = l_uu(x,u) + f_u_t.T @ A[t+1] @ f_u_t# + b[t+1] @ f_uu(x,u)
+            f_x, f_u = agent.f_x_f_u(x,u)
+            l_x, l_u = agent.l_x_l_u(x,u)
+            l_xx, l_uu, l_ux = agent.l_xx_l_uu_l_ux(x,u)
+            # calc ddp
+            Q_x = l_x + f_x.T @ b[t+1]
+            Q_u = l_u + f_u.T @ b[t+1]
+            Q_xx = l_xx + f_x.T @ A[t+1] @ f_x + b[t+1] @ f_xx(x,u)
+            Q_ux = l_ux + f_u.T @ A[t+1] @ f_x# + b[t+1] @ f_ux(x,u)
+            Q_uu = l_uu + f_u.T @ A[t+1] @ f_u# + b[t+1] @ f_uu(x,u)
             # try:
             inv_Q_uu = torch.linalg.inv(Q_uu) # potencially danger operation
             # except:

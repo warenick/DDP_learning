@@ -15,12 +15,11 @@ if __name__=="__main__":
     agent = Agent(initial_state=[-0.5, 0.5, 0],  goal=[-2, 3, 0],  dt=dt, name="1") 
     
     t1 = time.time()
-    agent.prediction["state"], agent.prediction["controll"] = ddp.optimize(agent, 30, viz)
+    agent.prediction["state"], agent.prediction["controll"] = ddp.optimize(agent, 50, viz)
     print(f"calculation time: {(time.time()-t1):.3}s",)
     ddp.initial_gradient_rate = 0.2
     for _ in range(10):
         agent.step()
         agent.prediction["state"], agent.prediction["controll"] = ddp.optimize(agent, 5, viz)
         viz.pub_agent_state([agent])
-        # time.sleep(1)
     exit()
