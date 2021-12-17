@@ -12,11 +12,17 @@ class Crowd:
         self.optimizers.append(optimizer)
 
     def optimize(self, epochs, visualize = False):
+        # TODO: parallel it
         for (agent, optimizer) in zip(self.agents, self.optimizers):
             if visualize:
                 agent.prediction["state"], agent.prediction["controll"] = optimizer.optimize(agent, epochs, self.viz) # optimize trajectory
             else:
                 agent.prediction["state"], agent.prediction["controll"] = optimizer.optimize(agent, epochs) # optimize trajectory
+
+    def step(self):
+        # TODO: parallel it
+        for agent in self.agents:
+            agent.step()
 
     def visualaze(self):
         self.viz.pub_agent_state(self.agents)

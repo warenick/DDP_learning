@@ -24,8 +24,12 @@ if __name__=="__main__":
 
     import time
     t1 = time.time()
-    crowd.optimize(epochs=30, visualize=False)
+    crowd.optimize(epochs=30, visualize=True)
     print(f"calculation time: {(time.time()-t1):.3}s",)
-    
-    crowd.visualaze()
+
+    ddp.initial_gradient_rate = 0.2
+    for _ in range(7):
+        crowd.step()
+        crowd.optimize(epochs=2, visualize=False)
+        crowd.visualaze()
     exit()

@@ -279,7 +279,7 @@ if __name__=="__main__":
         print("running_cost ",ag.running_cost(state,controll))
         print("final_cost ",ag.final_cost(state))
         print("step ",ag.step())
-        print("----------------differencials---------------------")
+        print("----------------gradients---------------------")
         print("l_x ",ag.l_x(state,controll))
         print("l_u ",ag.l_u(state,controll))
         print("l_x_l_u",ag.l_x_l_u(state,controll))
@@ -295,5 +295,7 @@ if __name__=="__main__":
         print("f_uu ",ag.f_uu(state,controll))
         print("f_xx ",ag.f_xx(state,controll))
         print("f_ux ",ag.f_ux(state,controll))
+        # print("f_xx_f_uu_f_ux ",ag.f_xx_f_uu_f_ux(state,controll)) # TODO
+        
     # torch.autograd.gradcheck
     
