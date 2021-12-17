@@ -23,26 +23,12 @@ class DDP:
         pred_time = len(u_seq)
         state_dim = x_seq.shape[-1]
         # that definition here just for readability
-        b = [torch.zeros(state_dim)+1e-10 for _ in range(pred_time + 1)]
-        A = [torch.zeros((state_dim, state_dim))+1e-10 for _ in range(pred_time + 1)]
-        # lf_x  = agent.lf_x
-        # lf_xx = agent.lf_xx
-        
-        # l_x   = agent.l_x
-        # l_u   = agent.l_u
-        # l_x_l_u = agent.l_x_l_u
-        # l_xx  = agent.l_xx
-        # l_uu  = agent.l_uu
-        # l_ux  = agent.l_ux
-        # f_x   = agent.f_x
-        # f_u   = agent.f_u
-        # f_x_f_u = agent.f_x_f_u
+        b = [torch.zeros(state_dim) for _ in range(pred_time + 1)]
+        A = [torch.zeros((state_dim, state_dim)) for _ in range(pred_time + 1)]
         f_xx  = agent.f_xx
         # f_uu  = agent.f_uu
         # f_ux  = agent.f_ux
         # that definition here just for readability
-        
-
         b[-1] = agent.lf_x(x_seq[-1])
         A[-1] = agent.lf_xx(x_seq[-1])
         k_seq = []

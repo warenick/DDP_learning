@@ -2,13 +2,14 @@ import torch
 from torch.functional import Tensor
 
 class Agent():
-    def __init__(self, initial_state=torch.tensor([0., 0., 0.]),  # [x, y, yaw, dv, dyaw]
+    def __init__(self, 
+                 initial_state=torch.tensor([0., 0., 0.]),  # [x, y, yaw, dv, dyaw]
                  goal=torch.tensor([10, 10, 0]),
                  type="agent",
                  kinematic_type="differencial",
                  dt=0.4,
                  umax=[2.0, 1.0],
-                 initial_controll = None,
+                 horizon = 10,
                  name="Bert"):
 
         self.name = name
@@ -23,8 +24,7 @@ class Agent():
         self.init_aux()
         
         # calc nominal trajectory(->agent.prediction)  # u =  # [[V,Vyaw],[V,Vyaw],...]
-        if initial_controll is None:
-            initial_controll = torch.rand((10,2))
+        initial_controll = torch.rand((horizon,2))
         self.calc_trajectory(initial_controll) 
         # self.update_history()
 
