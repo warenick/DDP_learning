@@ -47,11 +47,13 @@ class Crowd:
         self.agents.append(agent)
         self.optimizers.append(optimizer)
 
-    def optimize(self, epochs, visualize = False, gradient_rate=None):
+    def optimize(self, epochs, visualize = False, gradient_rate=None, regularisation=0.91):
         # TODO: parallel it
         for (agent, optimizer) in zip(self.agents, self.optimizers):
             if gradient_rate is not None:
                 optimizer.initial_gradient_rate = gradient_rate
+            if regularisation is not None:
+                optimizer.regularisation = regularisation
             if visualize:
                 agent.prediction["state"], agent.prediction["controll"] = optimizer.optimize(agent, epochs, self.viz) # optimize trajectory
             else:

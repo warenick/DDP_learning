@@ -1,3 +1,4 @@
+from math import dist
 import torch
 from torch.functional import Tensor
 
@@ -127,10 +128,13 @@ class Agent():
         
         return self.state
     #     # action = u[v,yaw]
+    def social_cost(self, state, others):
+        distances = torch.sum(torch.linalg.norm(state[:2]-others[:2],dim=1))
+        return distances
 
     def final_cost(self,state, k_yaw=torch.tensor(0.1)):
         # state[x,y,yaw]
-        evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])**2
+        evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])**2 + torch.linalg.norm(state[:2]-self.goal[:2])
         # evclidian_dist = evclidian_dist if evclidian_dist>0.3 else evclidian_dist*0.3 # dirty fix oscilation near the goal
         # angle_dist = (state[2]-self.goal[2])%self.pi*k_yaw
         return evclidian_dist
@@ -139,11 +143,7 @@ class Agent():
     def running_cost(self, state, controll, k_state=1.):
         state_cost = self.final_cost(state)*k_state
         controll_cost = torch.sum(torch.pow(controll, 2))
-        # controll_cost = torch.sum(torch.abs(controll))
-        # pred = self.final_cost(state)
-        # next = self.final_cost(self.step_func(state,controll))
-
-        # controll_cost = (pred - next)*torch.sum(torch.pow(controll,2))*k_state
+        # social_cost = self.social_cost(state,)
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
         return state_cost+controll_cost

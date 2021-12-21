@@ -8,7 +8,7 @@ default = {
     "optimizer":{
         "type":"ddp",
         "gradient_rate":1.0,
-        "regularisation":1.0,
+        "regularisation":0.95,
     }
 }
 agents = [
