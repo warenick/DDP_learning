@@ -26,7 +26,7 @@ class Crowd:
                     agent[field]=module.default[field]
             # create optimizer
             opt = agent["optimizer"]
-            if "ddp" in opt["type"] or "DDP" in opt["type"]: 
+            if "ddp" in opt["type"].lower(): # "ddp" or "social_ddp"
                 new_optimizer = DDP(opt["gradient_rate"], opt["regularisation"])
             new_agent = Agent(
                 agent["initial_state"],
@@ -49,15 +49,17 @@ class Crowd:
 
     def optimize(self, epochs, visualize = False, gradient_rate=None, regularisation=0.91):
         # TODO: parallel it
-        for (agent, optimizer) in zip(self.agents, self.optimizers):
+        # if "social_ddp" in self.optimizers.lower():
+        #     def optimize_
+        for optimizer in self.optimizers:
             if gradient_rate is not None:
                 optimizer.initial_gradient_rate = gradient_rate
             if regularisation is not None:
                 optimizer.regularisation = regularisation
-            if visualize:
-                agent.prediction["state"], agent.prediction["controll"] = optimizer.optimize(agent, epochs, self.viz) # optimize trajectory
-            else:
-                agent.prediction["state"], agent.prediction["controll"] = optimizer.optimize(agent, epochs) # optimize trajectory
+        viz = self.viz if visualize else None
+        for _ in range(epochs):
+            for (agent, optimizer) in zip(self.agents, self.optimizers):
+                agent.prediction["state"], agent.prediction["controll"] = optimizer.optimize(agent, 1, viz) # optimize trajectory
 
     def step(self):
         # TODO: parallel it
