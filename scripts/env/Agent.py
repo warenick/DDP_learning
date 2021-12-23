@@ -129,7 +129,7 @@ class Agent():
         return self.state
     #     # action = u[v,yaw]
     def social_cost(self, state, others):
-        distances = torch.sum(torch.linalg.norm(state[:2]-others[:2],dim=1))
+        distances = torch.sum(1./torch.linalg.norm(state[:2]-others[:,:2],dim=1))**2
         return distances
 
     def final_cost(self,state, k_yaw=torch.tensor(0.1)):
@@ -140,41 +140,39 @@ class Agent():
         return evclidian_dist
         # return evclidian_dist+angle_dist
 
-    def running_cost(self, state, controll, k_state=1.):
+    def running_cost(self, state, controll, others=None, k_state=1.):
         state_cost = self.final_cost(state)*k_state
         controll_cost = torch.sum(torch.pow(controll, 2))
-        # social_cost = self.social_cost(state,)
+        social_cost = self.social_cost(state, others) if others is not None else torch.tensor(0.)
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
-        return state_cost+controll_cost
+        return state_cost+controll_cost+social_cost
 
-    def l_x(self, state, controll):
-        # [3] Gradient over state
-        # x = state.clone().detach().requires_grad_(True)
-        x = state.clone().detach().requires_grad_(True)
-        u = controll.clone().detach()
-        # fuckfuckfuckfuckfuckfuckfuck
-        # torch.autograd.gradcheck(self.running_cost,(x,u))
-        y = self.running_cost(x,u)
-        y.backward()
-        return x.grad
-
-    def l_x_l_u(self, state, controll):
+    def l_x_l_u(self, state, controll, others = None):
         # [3] Gradient over state, [3] Gradient over controll
         # x = state.clone().detach().requires_grad_(True)
         x = state.clone().detach().requires_grad_(True)
         u = controll.clone().detach().requires_grad_(True)
-        # fuckfuckfuckfuckfuckfuckfuck
         # torch.autograd.gradcheck(self.running_cost,(x,u))
-        y = self.running_cost(x,u)
+        y = self.running_cost(x,u,others)
         y.backward()
         return x.grad, u.grad
 
-    def l_u(self, state, controll):
+    def l_x(self, state, controll, others = None):
+        # [3] Gradient over state
+        # x = state.clone().detach().requires_grad_(True)
+        x = state.clone().detach().requires_grad_(True)
+        u = controll.clone().detach()
+        # torch.autograd.gradcheck(self.running_cost,(x,u))
+        y = self.running_cost(x,u,others)
+        y.backward()
+        return x.grad
+
+    def l_u(self, state, controll, others = None):
         # [2] Gradient over controll
         u = controll.clone().detach().requires_grad_(True)
         x = state.clone().detach()
-        y = self.running_cost(x,u)
+        y = self.running_cost(x,u,others)
         y.backward()
         return u.grad
 
@@ -204,23 +202,37 @@ class Agent():
         # [3,3] Hessian over state
         return torch.autograd.functional.hessian(self.final_cost,state)
 
-    def l_xx(self, state, controll):
-        # [3,3] Hessian over state
-        hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
-        return hessian_out[0][0] # [0][0] -> x,x
-
-    def l_xx_l_uu_l_ux(self, state, controll):
+    def l_xx_l_uu_l_ux(self, state, controll, others = None):
         # [3,3] Hessian over state, [2,2] Hessian over controll, [2,3] Hessian over controll and state
-        hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
+        if others is not None:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll,others)) # [[xx,xy],[yx,yy]]
+        else:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
         return hessian_out[0][0], hessian_out[1][1], hessian_out[1][0] # [0][0] -> x,x
 
-    def l_uu(self, state, controll):
+    def l_xx(self, state, controll, others = None):
+        # [3,3] Hessian over state
+        if others is not None:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll,others))
+        else:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
+        return hessian_out[0][0] # [0][0] -> x,x
+
+    def l_uu(self, state, controll, others = None):
         # [2,2] Hessian over controll
-        hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xu],[ux,uu]]
+        if others is not None:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll,others))
+        else:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xu],[ux,uu]]
+
         return hessian_out[1][1] # [1][1] -> u,u
-    def l_ux(self, state, controll):
+
+    def l_ux(self, state, controll, others = None):
         # [2,3] Hessian over controll and state
-        hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
+        if others is not None:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll,others))
+        else:
+            hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll)) # [[xx,xy],[yx,yy]]
         return hessian_out[1][0]# [1][0] -> u,x
 
     def f_xx(self, state, controll):

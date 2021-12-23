@@ -2,24 +2,25 @@ import torch
 
 class DDP:
     # ddp with small diferences from cddp article http://ieeexplore.ieee.org/document/7989086/
-    def __init__(self, gradient_rate = 1., regularisation=0.95) -> None:
+    def __init__(self, gradient_rate = 1., regularisation=0.95, type="ddp") -> None:
+        self.type = type
         self.initial_gradient_rate = gradient_rate
         self.gradient_rate = gradient_rate
         self.regularisation = regularisation
 
-    def optimize(self, agent, num_epochs=1, visualizer=None):
+    def optimize(self, agent, agents = None, num_epochs=1, visualizer=None):
         self.gradient_rate = self.initial_gradient_rate
         states = agent.prediction["state"]      #.clone().detach() # not sure that clone().detach() is necessary
         controlls = agent.prediction["controll"]#.clone().detach() # not sure that clone().detach() is necessary
         for _ in range(num_epochs):
-            k_seq, kk_seq     = self.backward(states, controlls, agent)
+            k_seq, kk_seq     = self.backward(states, controlls, agent, agents)
             states, controlls = self.forward(states, controlls, k_seq, kk_seq, agent.step_func)
             self.gradient_rate = self.gradient_rate*self.regularisation
             if visualizer is not None:
                 visualizer.pub_agent_state([agent])
         return states, controlls
     
-    def backward(self, x_seq, u_seq, agent):
+    def backward(self, x_seq, u_seq, agent, agents = None):
         pred_time = len(u_seq)
         state_dim = x_seq.shape[-1]
         # that definition here just for readability
@@ -37,8 +38,12 @@ class DDP:
             # calc derivatives
             x,u = (x_seq[t], u_seq[t]) # state and controll at the current time step
             f_x, f_u = agent.f_x_f_u(x,u)
-            l_x, l_u = agent.l_x_l_u(x,u)
-            l_xx, l_uu, l_ux = agent.l_xx_l_uu_l_ux(x,u)
+            if agents is not None:
+                l_x, l_u = agent.l_x_l_u(x,u,agents[t])
+                l_xx, l_uu, l_ux = agent.l_xx_l_uu_l_ux(x,u,agents[t])
+            else:
+                l_x, l_u = agent.l_x_l_u(x,u)
+                l_xx, l_uu, l_ux = agent.l_xx_l_uu_l_ux(x,u)
             # calc ddp
             Q_x = l_x + f_x.T @ b[t+1]
             Q_u = l_u + f_u.T @ b[t+1]
