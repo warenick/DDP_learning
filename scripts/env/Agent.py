@@ -23,12 +23,35 @@ class Agent():
         self.prediction = {}
         self.pi = torch.acos(torch.zeros(1)).item() * 2
         self.init_aux()
-        
+        self.horizon = horizon
         # calc nominal trajectory(->agent.prediction)  # u =  # [[V,Vyaw],[V,Vyaw],...]
-        initial_controll = torch.rand((horizon,2))
+        initial_controll = self.generate_linear_controll(self.horizon, self.state, self.goal)# torch.rand((horizon,2))
         self.calc_trajectory(initial_controll) 
         # self.update_history()
 
+    def generate_linear_controll(self, steps, state, goal):
+        controll = torch.rand((steps, 2)) #torch.zeros((steps, 2))
+        current_state = state.clone()
+        
+        # rotate to moving dir firstly
+        angle_direction = torch.atan2(goal[1]-state[1],goal[0]-state[0])
+        angle_diff = current_state[2]-angle_direction
+        sign = angle_diff/torch.abs(angle_diff)
+        curr_step = 0
+        while  torch.linalg.norm(current_state[2] - angle_direction)>0.01 and curr_step<steps:
+            angle_diff = current_state[2]-angle_direction
+            move_angle = sign*angle_diff#%self.pi
+            controll[curr_step] = torch.clip(torch.tensor([0., move_angle]),-self.umax[1],self.umax[1])
+            current_state = self.step_func(current_state, controll[curr_step])
+            curr_step+=1
+        # move forvard next
+        while curr_step<steps:
+            dist = torch.linalg.norm(current_state[:2]-goal[:2])
+            controll[curr_step] = torch.clip(torch.tensor([dist,0.]),-self.umax[0],self.umax[0])
+            current_state = self.step_func(current_state, controll[curr_step])
+            curr_step+=1
+        return controll
+        # angle =         
 
     def init_aux(self):
         self.aux1 = torch.eye(3)
@@ -69,9 +92,9 @@ class Agent():
         if "differencial" in self.kinematic_type:
             # u = [v,vyaw]
             V = torch.clamp((u[0]), -self.umax[0], self.umax[0]) # Linear velocity
-            Vr = torch.clamp((u[1]), -self.umax[1], self.umax[1]) # Angular velocity of robot
-            # Radius of rotation
-            R = V/(Vr+1e-10)
+            Vr = torch.clamp((u[1]), -self.umax[1], self.umax[1])+1e-6 # Angular velocity of robot
+            # Radius of trajectory
+            R = V/(Vr)
             # Instantaneous Center of Curvature
             icc = x[:2]+R*(
                 torch.sin(x[2])*torch.Tensor([-1,0])+
@@ -128,6 +151,9 @@ class Agent():
         
         return self.state
     #     # action = u[v,yaw]
+#############################################################
+########################### costs ###########################
+#############################################################
     def social_cost(self, state, others):
         distances = torch.sum(1./torch.linalg.norm(state[:2]-others[:,:2],dim=1))**2
         return distances
@@ -135,6 +161,7 @@ class Agent():
     def final_cost(self,state, k_yaw=torch.tensor(0.1)):
         # state[x,y,yaw]
         evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])**2 + torch.linalg.norm(state[:2]-self.goal[:2])
+        # evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])
         # evclidian_dist = evclidian_dist if evclidian_dist>0.3 else evclidian_dist*0.3 # dirty fix oscilation near the goal
         # angle_dist = (state[2]-self.goal[2])%self.pi*k_yaw
         return evclidian_dist
@@ -147,6 +174,9 @@ class Agent():
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
         return state_cost+controll_cost+social_cost
+#############################################################
+########################### costs ###########################
+#############################################################
 
     def l_x_l_u(self, state, controll, others = None):
         # [3] Gradient over state, [3] Gradient over controll
@@ -273,41 +303,60 @@ class Agent():
         return second.clone().detach()
 
 
-# tests
+# some debug checkers
 if __name__=="__main__":
+    from pprint import pprint
     goal = [10.,10.,0.]
     dt = 1.0
     ag =Agent(goal=goal,dt=dt)
-    state = torch.tensor([0.,0.,0.])
-    controll = torch.tensor([1.,1.])
-    with torch.autograd.detect_anomaly():
+
         # print(torch.autograd.gradcheck(ag.l_x,(state,controll)))
-        print("----------------initial---------------------------")
-        print("state ",state)
-        print("controll ",controll)
-        print("goal ",goal)
-        print("dt ",dt)
-        print("----------------dynamics--------------------------")
-        print("step_func ",ag.step_func(state,controll))
-        print("running_cost ",ag.running_cost(state,controll))
-        print("final_cost ",ag.final_cost(state))
-        print("step ",ag.step())
+    print("----------------initial---------------------------")
+    print("state ",ag.state)
+    print("goal ",goal)
+    print("dt ",dt)
+    print("state prediction ")
+    pprint(ag.prediction["state"])
+    print("controll prediction ")
+    pprint(ag.prediction["controll"])
+    controll = ag.prediction["controll"][0]
+    print("----------------dynamics--------------------------")
+    print("step_func ",ag.step_func(ag.state,controll))
+    print("running_cost ",ag.running_cost(ag.state,controll))
+    print("final_cost ",ag.final_cost(ag.state))
+    print("step ",ag.step())
+    with torch.autograd.detect_anomaly():
         print("----------------gradients---------------------")
-        print("l_x ",ag.l_x(state,controll))
-        print("l_u ",ag.l_u(state,controll))
-        print("l_x_l_u",ag.l_x_l_u(state,controll))
-        print("l_xx ",ag.l_xx(state,controll))
-        print("l_uu ",ag.l_uu(state,controll))
-        print("l_ux ",ag.l_ux(state,controll))
-        print("l_xx_l_uu_l_ux ",ag.l_xx_l_uu_l_ux(state,controll))
-        print("lf_x ",ag.lf_x(state))
-        print("lf_xx ",ag.lf_xx(state))
-        print("f_x ",ag.f_x(state,controll))
-        print("f_u ",ag.f_u(state,controll))
-        print("f_x_f_u ",ag.f_x_f_u(state,controll))
-        print("f_uu ",ag.f_uu(state,controll))
-        print("f_xx ",ag.f_xx(state,controll))
-        print("f_ux ",ag.f_ux(state,controll))
+        print("l_x ")
+        pprint(ag.l_x(ag.state,controll))
+        print("l_u ")
+        pprint(ag.l_u(ag.state,controll))
+        print("l_x_l_u")
+        pprint(ag.l_x_l_u(ag.state,controll))
+        print("l_xx ")
+        pprint(ag.l_xx(ag.state,controll))
+        print("l_uu ")
+        pprint(ag.l_uu(ag.state,controll))
+        print("l_ux ")
+        pprint(ag.l_ux(ag.state,controll))
+        print("l_xx_l_uu_l_ux ")
+        pprint(ag.l_xx_l_uu_l_ux(ag.state,controll))
+        print("lf_x ")
+        pprint(ag.lf_x(ag.state))
+        print("lf_xx ")
+        pprint(ag.lf_xx(ag.state))
+        print("f_x ")
+        pprint(ag.f_x(ag.state,controll))
+        print("f_u ")
+        pprint(ag.f_u(ag.state,controll))
+        print("f_x_f_u ")
+        pprint(ag.f_x_f_u(ag.state,controll))
+        print("f_uu ")
+        pprint(ag.f_uu(ag.state,controll))
+        print("f_xx ")
+        pprint(ag.f_xx(ag.state,controll))
+        print("f_ux ")
+        pprint(ag.f_ux(ag.state,controll))
         # print("f_xx_f_uu_f_ux ",ag.f_xx_f_uu_f_ux(state,controll)) # TODO
         
     # torch.autograd.gradcheck

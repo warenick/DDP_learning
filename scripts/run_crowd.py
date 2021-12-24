@@ -9,7 +9,7 @@ if __name__=="__main__":
     crowd.read_from_conf("configs.H4")
     import time
     t1 = time.time()
-    crowd.optimize(epochs=5, gradient_rate=0.2, regularisation=0.90, visualize=True)
+    crowd.optimize(epochs=20, gradient_rate=0.2, regularisation=0.90, visualize=True)
     print(f"calculation time: {(time.time()-t1):.3}s",)
     for _ in range(30):
         crowd.step()
