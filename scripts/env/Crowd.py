@@ -1,6 +1,7 @@
 import torch
 from env.Agent import Agent
 from DDP import DDP
+from Linear import Linear
 from importlib import import_module
 from pprint import pprint
 class Crowd:
@@ -35,8 +36,10 @@ class Crowd:
                 new_optimizer = DDP(
                     gradient_rate = opt["gradient_rate"], 
                     regularisation=opt["regularisation"], 
-                    type=opt["type"]
+                    type=opt["type"].lower()
                     )
+            elif "linear" in opt["type"].lower(): # "linear"
+                new_optimizer = Linear(type=opt["type"].lower())
             new_agent = Agent(
                 agent["initial_state"],
                 agent["goal"],
@@ -73,7 +76,8 @@ class Crowd:
 
             # for (agent, optimizer) in zip(self.agents, self.optimizers):
             for num in range(len(self.agents)):
-                self.agents[num].prediction["state"], self.agents[num].prediction["controll"] = self.optimizers[num].optimize(agent = self.agents[num], agents=stacked_agents[num], num_epochs=1, visualizer=viz) # optimize trajectory
+                stacked_agents_exclude_one = stacked_agents[num] if self.with_social else None
+                self.agents[num].prediction["state"], self.agents[num].prediction["controll"] = self.optimizers[num].optimize(agent = self.agents[num], agents=stacked_agents_exclude_one, num_epochs=1, visualizer=viz) # optimize trajectory
     
     def stack_agents_poses(self, agents=None): # without one to avoid self influance
         agents = agents if agents is not None else self.agents 

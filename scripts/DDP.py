@@ -1,7 +1,6 @@
 import torch
 
 class DDP:
-    # ddp with small diferences from cddp article http://ieeexplore.ieee.org/document/7989086/
     def __init__(self, gradient_rate = 1., regularisation=0.95, type="ddp") -> None:
         self.type = type
         self.initial_gradient_rate = gradient_rate

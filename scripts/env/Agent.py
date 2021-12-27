@@ -29,7 +29,10 @@ class Agent():
         self.calc_trajectory(initial_controll) 
         # self.update_history()
 
-    def generate_linear_controll(self, steps, state, goal):
+    def generate_linear_controll(self, steps=None, state=None, goal=None):
+        steps = steps if steps is not None else self.horizon
+        state = state if state is not None else self.state
+        goal = goal if goal is not None else self.goal
         controll = torch.rand((steps, 2)) #torch.zeros((steps, 2))
         current_state = state.clone()
         
