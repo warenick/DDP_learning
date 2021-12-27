@@ -7,7 +7,8 @@ if __name__=="__main__":
     crowd = Crowd(visualizer=viz)
     # crowd.read_from_conf("configs.X4")
     # crowd.read_from_conf("configs.H4_social")
-    crowd.read_from_conf("configs.H4_linear")
+    # crowd.read_from_conf("configs.H4_linear")
+    crowd.read_from_conf("configs.H4_mix")
     import time
     t1 = time.time()
     crowd.optimize(epochs=20, gradient_rate=0.2, regularisation=0.90, visualize=True)

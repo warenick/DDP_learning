@@ -94,7 +94,7 @@ class Agent():
     def step_func(self, x, u):
         if "differencial" in self.kinematic_type:
             # u = [v,vyaw]
-            V = torch.clamp((u[0]), -self.umax[0], self.umax[0]) # Linear velocity
+            V  = torch.clamp((u[0]), -self.umax[0], self.umax[0]) # Linear velocity
             Vr = torch.clamp((u[1]), -self.umax[1], self.umax[1])+1e-6 # Angular velocity of robot
             # Radius of trajectory
             R = V/(Vr)
@@ -113,30 +113,6 @@ class Agent():
                  icc[1]*self.aux010 + \
                  Vr*self.dt*self.aux001)
         return pose
-        
-
-    def step_func2(self, x, u):
-        if "differencial" in self.kinematic_type:
-            # u = [0,0,0,v,vyaw]
-            # controll = self.dt*torch.clamp((u[3:]+x[3:]), -self.umax[-1], self.umax[-1])
-            # controll = torch.tensor([torch.clamp((u[3]+x[3]), -vmax, vmax),
-            #                         torch.clamp((u[4]+x[4]), -vyawmax, vyawmax)])
-            controll = torch.tensor([1,0])* torch.clamp(u[3], -self.umax[3], self.umax[3]) + torch.tensor([0,1])*torch.clamp(u[4], -self.umax[4], self.umax[4])
-            # controll = torch.clamp((u[3:]), -self.umax[-1], self.umax[-1])
-            aux_sin = torch.zeros((3,2))
-            aux_sin[1,0] = 1.
-            aux_cos = torch.zeros((3,2))
-            aux_cos[0,0] = 1.
-            aux_aux = torch.zeros((3,2))
-            aux_aux[-1,-1] = 1.
-            matrix =  torch.cos(x[2]*self.dt)*aux_cos+torch.sin(x[2]*self.dt)*aux_sin+aux_aux
-            # matrix = torch.tensor([[torch.cos(x[2]*self.dt), 0],
-            #                        [torch.sin(x[2]*self.dt), 0],
-            #                        [0,                       1]])
-            pose = x[:3] + matrix@controll
-        # return torch.cat((pose,controll)) 
-        return torch.cat((pose,controll)) 
-        # return (pose,controll) 
 
     def step(self, controll = None):
         controll = controll if controll is not None else self.prediction["controll"][0]
