@@ -1,0 +1,5 @@
+<launch>
+    <node name="ddp" pkg="ddp_learning" type="run.py"/> 
+    <include file="$(find ddp_learning)/launch/rviz.launch" />
+    <include file="$(find ddp_learning)/launch/global_map.launch" />
+</launch>

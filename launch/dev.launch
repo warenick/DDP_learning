@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find ddp_learning)/launch/rviz.launch" />
+    <include file="$(find ddp_learning)/launch/global_map.launch" />
+</launch>

@@ -1,0 +1,22 @@
+<launch>
+
+    <!-- fake localisation -->
+    <node pkg="tf" type="static_transform_publisher" name="map_to_odom_footprint_broadcaster" args="0 0 0 0 0 0 1 map odom 100" />
+    <node pkg="tf" type="static_transform_publisher" name="odom_to_base_footprint_broadcaster" args="0 0 0 0 0 0 1 odom base_footprint 100" />
+    <node pkg="tf" type="static_transform_publisher" name="base_footprint_to_base_link_broadcaster" args="0 0 0 0 0 0 1 base_footprint base_link 100" />
+    <!-- map server for reading .png to /map topic -->
+    <node pkg="map_server" type="map_server" name="map_reader" args="$(find ddp_learning)/resouces/global_testmap.yaml" />
+    <!-- </node> -->
+    <!-- move_base -->
+  <node pkg="move_base" type="move_base" name="move_base" output="screen">
+    <rosparam file="$(find ddp_learning)/param/costmap_params.yaml" command="load" /> 
+    <!-- <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" /> -->
+    <!-- <rosparam file="$(find ddp_learning)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find ddp_learning)/param/global_costmap_params.yaml" command="load" />  -->
+    <!-- <rosparam file="$(find ddp_learning)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />  -->
+    <!-- <rosparam file="$(find ddp_learning)/param/local_costmap_params.yaml" command="load" /> -->
+    <!-- <rosparam file="$(find ddp_learning)/param/move_base_params.yaml" command="load" />
+    <rosparam file="$(find ddp_learning)/param/dwa_local_planner_params.yaml" command="load" /> -->
+    <!-- <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" /> -->
+  </node>
+</launch>
