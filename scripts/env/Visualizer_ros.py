@@ -15,11 +15,17 @@ MARKER_CFG = {
     "robot":{
         "scale":Vector3(0.3, 0.6, 1.8),
         "color":ColorRGBA(0.9, 0.9, 0.9, 1), # white
-        "history_color": ColorRGBA(0.9, 0.9, 0.9, 0.2)},
+        "prediction_color": ColorRGBA(0.9, 0.9, 0.9, 0.2)},
     "agent":{
         "scale":Vector3(0.3, 0.6, 1.8),
         "color":ColorRGBA(0, 0.9, 0, 1), # green
-        "history_color": ColorRGBA(0, 0.9, 0, 0.2)},
+        "prediction_color": ColorRGBA(0, 0.9, 0, 0.2)},
+    "robot_path":{
+        "color":ColorRGBA(0, 1, 0, 1), # green
+        "scale":Vector3(0.15, 0.0, 0.0)}, # x - with of line
+    "agent_path":{
+        "color":ColorRGBA(0, 0.5, 0.5, 1), # green/blue
+        "scale":Vector3(0.1, 0.0, 0.0)}, # x - with of line
     "robot_goal":{
         "scale":Vector3(0.2, 0.35, 0.2),
         "color":ColorRGBA(0, 1, 0, 1)}, # green
@@ -53,7 +59,7 @@ class Visualizer_ros:
             #     type=Marker.SPHERE,
             #     action=Marker.ADD,
             #     scale=MARKER_CFG[agent.type]["scale"],
-            #     color=MARKER_CFG[agent.type]["history_color"],
+            #     color=MARKER_CFG[agent.type]["prediction_color"],
             #     pose=self.__arr2pose(agent.state_initial),
             #     ns = "initial_state"
             # )
@@ -91,22 +97,47 @@ class Visualizer_ros:
             # PREDICTION
             local_id = 0
             for state in agent.prediction["state"]:
-                history_marker = Marker(
+                prediction_marker = Marker(
                     id=local_id,
                     type=Marker.SPHERE,
                     action=Marker.ADD,
                     scale=MARKER_CFG[agent.type]["scale"],
-                    color=MARKER_CFG[agent.type]["history_color"],
+                    color=MARKER_CFG[agent.type]["prediction_color"],
                     pose=self.__arr2pose(state),
                     ns = "predicted states " + agent.name
                 )
-                history_marker.header.frame_id = self.frame
-                history_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
-                msg.markers.append(history_marker)
+                prediction_marker.header.frame_id = self.frame
+                prediction_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
+                msg.markers.append(prediction_marker)
                 local_id += 1
+
+            # PREDICTION AS PATH
+            # local_id = 0
+            # for state in agent.prediction["state"]:
+            path_marker = Marker(
+                id=local_id,
+                type=Marker.LINE_STRIP,
+                action=Marker.ADD,
+                scale=MARKER_CFG[agent.type+"_path"]["scale"],
+                color=MARKER_CFG[agent.type+"_path"]["color"],
+                pose=self.__arr2pose([0,0,0]),
+                points=self.__arr2posearr(agent.prediction["state"]),
+                ns = "predicted path " + agent.name
+            )
+            path_marker.header.frame_id = self.frame
+            path_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
+            msg.markers.append(path_marker)
+            # local_id += 1
 
         self.pub.publish(msg)
         # rospy.sleep(0.001) # just for publish
+
+    def __arr2posearr(self,arr):
+        posearr = []
+        for p in arr:
+            point = Point(x=p[0], y=p[1], z=0) 
+            posearr.append(point)
+        return posearr
 
     def __arr2pose(self, arr):
         p = Pose()
