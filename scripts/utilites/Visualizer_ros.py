@@ -1,14 +1,10 @@
 import torch
-from torch._C import dtype
 import rospy
 import numpy as np
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
 from std_msgs.msg import ColorRGBA
 import torch
-# from copy import deepcopy
-# from env.Agent import Agent
-# import math
 
 
 MARKER_CFG = {
@@ -112,8 +108,6 @@ class Visualizer_ros:
                 local_id += 1
 
             # PREDICTION AS PATH
-            # local_id = 0
-            # for state in agent.prediction["state"]:
             path_marker = Marker(
                 id=local_id,
                 type=Marker.LINE_STRIP,
@@ -127,7 +121,6 @@ class Visualizer_ros:
             path_marker.header.frame_id = self.frame
             path_marker.pose.position.z = MARKER_CFG[agent.type]["scale"].z/2.
             msg.markers.append(path_marker)
-            # local_id += 1
 
         self.pub.publish(msg)
         # rospy.sleep(0.001) # just for publish

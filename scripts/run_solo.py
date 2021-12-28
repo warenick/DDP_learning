@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 from env.Agent import Agent
-from env.Visualizer_ros import Visualizer_ros
+from utilites.Visualizer_ros import Visualizer_ros
 from DDP import DDP 
 import time
 

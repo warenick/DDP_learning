@@ -34,10 +34,10 @@ class DynamicTfPub:
 if __name__=="__main__":
     rospy.init_node("my_tf", anonymous=True)
     map_coords = [0,0,0]
-    base_link_coords = [10,10,1]
+    base_link_coords = [0,0,0]
     mytf = DynamicTfPub(frame_from="map",frame_to="base_link")
     while not rospy.is_shutdown():
-        base_link_coords[0]+=1
+        # base_link_coords[0]+=1
         mytf.pub_tf(coords_from=map_coords, coords_to=base_link_coords)
-        rospy.sleep(.1)
+        rospy.sleep(.05)
     exit()

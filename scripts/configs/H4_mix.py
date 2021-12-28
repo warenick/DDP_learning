@@ -1,7 +1,7 @@
 default = {
     "dt":0.4, # seconds for step
     "initial_state":[0., 0., 0.],  # [x,y,yaw]
-    "umax":[2.0, 1.0], # [Vmax,Vyawmax]
+    "umax":[1.0, 0.5], # [Vmax,Vyawmax]
     "kinematic_type":"differencial",
     "type":"agent",
     "horizon": 6, # steps to be predicted
