@@ -9,7 +9,10 @@ if __name__=="__main__":
     cr = CostmapReader()
     crowd = Crowd(visualizer=viz)
     # crowd.read_from_conf("configs.X4")
-    crowd.read_from_conf("configs.H4_social")
+    
+    # crowd.read_from_conf("configs.H4_social_costmap", costmap=cr)
+    crowd.read_from_conf("configs.H4_costmap", costmap=cr)
+    # crowd.read_from_conf("configs.H4_social")
     # crowd.read_from_conf("configs.H4_linear")
     # crowd.read_from_conf("configs.H4_mix")
     t1 = time.time()

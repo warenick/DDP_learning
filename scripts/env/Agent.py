@@ -11,8 +11,9 @@ class Agent():
                  dt=0.4,
                  umax=[2.0, 1.0],
                  horizon = 10,
-                 name="Bert"):
-
+                 name="Bert",
+                 costmap=None):
+        self.costmap = costmap
         self.name = name
         self.state = initial_state if isinstance(initial_state, torch.Tensor) else torch.tensor(initial_state)
         self.goal = goal if isinstance(goal, torch.Tensor) else torch.tensor(goal)
@@ -133,6 +134,9 @@ class Agent():
 #############################################################
 ########################### costs ###########################
 #############################################################
+    def costmap_cost(self, state):
+        return torch.tensor(self.costmap.at_position(state))
+
     def social_cost(self, state, others):
         distances = torch.sum(1./torch.linalg.norm(state[:2]-others[:,:2],dim=1))**2
         return distances
@@ -150,9 +154,12 @@ class Agent():
         state_cost = self.final_cost(state)*k_state
         controll_cost = torch.sum(torch.pow(controll, 2))
         social_cost = self.social_cost(state, others) if others is not None else torch.tensor(0.)
+        costmap_cost = self.costmap_cost(state) if self.costmap is not None else torch.tensor(0.)
+        # if costmap_cost !=0:
+        #     print("here")
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
-        return state_cost+controll_cost+social_cost
+        return state_cost+controll_cost+social_cost+controll_cost*costmap_cost
 #############################################################
 ########################### costs ###########################
 #############################################################

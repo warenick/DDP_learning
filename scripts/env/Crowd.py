@@ -12,7 +12,8 @@ class Crowd:
         self.optimizers = []
         self.with_social = False
     
-    def read_from_conf(self, config = "configs.X4"):
+    def read_from_conf(self, config = "configs.X4", costmap=None):
+        # costmap needed to compute cost in case of map optimisation
         module = import_module(config)
         print("==========================")
         print(" read config: ", config)
@@ -40,6 +41,7 @@ class Crowd:
                     )
             elif "linear" in opt["type"].lower(): # "linear"
                 new_optimizer = Linear(type=opt["type"].lower())
+            costmap_provider = costmap if "map" in opt["type"].lower() else None
             new_agent = Agent(
                 agent["initial_state"],
                 agent["goal"],
@@ -49,6 +51,7 @@ class Crowd:
                 agent["umax"],
                 agent["horizon"],
                 agent["name"],
+                costmap_provider
             )
             self.add_agent(new_agent, new_optimizer)
         # print("optimisation with socials: ", self.with_social)
@@ -62,27 +65,20 @@ class Crowd:
 
     def optimize(self, epochs=1, visualize=False, gradient_rate=None, regularisation=0.91):
         viz = self.viz if visualize else None
-        # update optimisation params
+        # update optimisation params if needed
         for optimizer in self.optimizers:
             optimizer.initial_gradient_rate = gradient_rate if gradient_rate is not None else optimizer.initial_gradient_rate
             optimizer.regularisation = regularisation if regularisation is not None else optimizer.regularisation                
 
 
         # TODO: parallel it
-        # stacked_agents = None
         for _ in range(epochs):
-            # if self.with_social:
-            #     stacked_agents = self.stack_agents_poses(self.agents)
-
             # for (agent, optimizer) in zip(self.agents, self.optimizers):
             for num in range(len(self.agents)):
                 stacked_agents_exclude_one = self.stack_agents_poses(self.agents, num) if "social" in self.optimizers[num].type else None
-                # TODO
-                # map = None if "social" in self.optimizers[num].type else None
-                # stacked_agents_exclude_one = stacked_agents[num] if self.with_social else None
                 self.agents[num].prediction["state"], self.agents[num].prediction["controll"] = self.optimizers[num].optimize(
                     agent = self.agents[num], 
-                    agents=stacked_agents_exclude_one, 
+                    agents=stacked_agents_exclude_one,
                     num_epochs=1, 
                     visualizer=viz)
     
@@ -91,22 +87,7 @@ class Crowd:
         num_agents = len(agents)
         num_steps = len(agents[0].prediction["state"]) # prediction horizon # TODO: warn about different prediction horizon for agents 
         state_dim = len(agents[0].prediction["state"][0])
-        # make all combinations
-        out = []
-        if exclude is None:
-            for num in range(num_agents):
-                out.append(self.stack_agents_poses(agents = agents, exclude=num))
-                # stacked_agents_without_one = torch.zeros((num_agents-1, num_steps, state_dim))
-                # stupid_fix = 0
-                # for agent in range(num_agents):
-                #     if agent is num:
-                #         stupid_fix=1
-                #         continue
-                #     stacked_agents_without_one[agent-stupid_fix] = agents[agent].prediction["state"]
-                # changed_axes = torch.moveaxis(stacked_agents_without_one,1,0) # convert to (num_steps, num_agents, state_dim)
-                # out.append(changed_axes)
-        else:
-            # for num in range(num_agents):
+        if exclude is not None:
             stacked_agents_without_one = torch.zeros((num_agents-1, num_steps, state_dim))
             stupid_fix = 0
             for agent in range(num_agents):
@@ -114,9 +95,13 @@ class Crowd:
                     stupid_fix=1
                     continue
                 stacked_agents_without_one[agent-stupid_fix] = agents[agent].prediction["state"]
-            changed_axes = torch.moveaxis(stacked_agents_without_one,1,0) # convert to (num_steps, num_agents, state_dim)
-            out= changed_axes
-        return out
+            return torch.moveaxis(stacked_agents_without_one,1,0) # convert to (num_steps, num_agents, state_dim)
+        else:
+        # make all combinations
+            out = []
+            for num in range(num_agents):
+                    out.append(self.stack_agents_poses(agents = agents, exclude=num))
+            return out
 
     def step(self):
         # TODO: parallel it

@@ -6,7 +6,7 @@ default = {
     "type":"agent",
     "horizon": 6, # steps to be predicted
     "optimizer":{
-        "type":"social-ddp", # options: ddp, social-ddp, linear
+        "type":"social-ddp", # options: linear, ddp, social-ddp, costmap-ddp, social-costmap-ddp
         "gradient_rate":0.25,
         "regularisation":0.91,
     }
@@ -17,7 +17,7 @@ agents = [
     "initial_state":[3.0, 1.0, 0.0],
     "goal":         [-3.0, 1.0, 0.0],
     "optimizer":{
-        "type":"social-ddp", # options: ddp, social-ddp, linear
+        "type":"social-ddp",
         "gradient_rate":0.25,
         "regularisation":0.91,
     }
@@ -27,7 +27,7 @@ agents = [
     "initial_state":[-3.0, 1.0, 0.0],
     "goal":         [3.0, 1.0, 0.0],
     "optimizer":{
-        "type":"linear", # options: ddp, social-ddp, linear
+        "type":"linear",
         "gradient_rate":0.25,
         "regularisation":0.91,
     }
@@ -37,7 +37,7 @@ agents = [
     "initial_state":[3.0, -1.5, 0.0],
     "goal":         [-3.0, -1.5, -0.0],
     "optimizer":{
-        "type":"social-ddp", # options: ddp, social-ddp, linear
+        "type":"social-ddp",
         "gradient_rate":0.25,
         "regularisation":0.91,
     }
@@ -47,7 +47,7 @@ agents = [
     "initial_state":[-3.0, -1.0, 0.0],
     "goal":         [3.0, -1.0, 0.0],
     "optimizer":{
-        "type":"linear", # options: ddp, social-ddp, linear
+        "type":"linear", 
         "gradient_rate":0.25,
         "regularisation":0.91,
     }
