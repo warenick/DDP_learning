@@ -1,11 +1,13 @@
 #! /usr/bin/python3
 from env.Agent import Agent
-from scripts.utilites.Visualizer import Visualizer
+from utilites.Visualizer import Visualizer
+from utilites.CostmapReader import CostmapReader
 from DDP import DDP 
 import time
 
 if __name__=="__main__":
     viz = Visualizer()
+    cr = CostmapReader()
     dt = 0.4
     # horizon = 10 # 10 by default
     gradient_rate = 1.0

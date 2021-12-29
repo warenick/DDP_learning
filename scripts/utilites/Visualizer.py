@@ -40,8 +40,10 @@ MARKER_CFG = {
 class Visualizer:
     
     def __init__(self, frame="map", topic="ddp/vis") -> None:
+        node_name = rospy.get_name()
+        if 'unnamed' in node_name:
+            rospy.init_node("ddp")
         self.frame = frame
-        rospy.init_node("ddp_vis")
         self.pub = rospy.Publisher(
             topic, MarkerArray, queue_size=1)
 

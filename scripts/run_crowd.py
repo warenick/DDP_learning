@@ -1,10 +1,12 @@
 #! /usr/bin/python3
-from scripts.utilites.Visualizer import Visualizer
+from utilites.Visualizer import Visualizer
+from utilites.CostmapReader import CostmapReader
 from env.Crowd import Crowd
 import time
 
 if __name__=="__main__":
     viz = Visualizer()
+    cr = CostmapReader()
     crowd = Crowd(visualizer=viz)
     # crowd.read_from_conf("configs.X4")
     crowd.read_from_conf("configs.H4_social")

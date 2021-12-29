@@ -4,7 +4,10 @@ from nav_msgs.msg import OccupancyGrid
 
 class CostmapReader:
     def __init__(self, topic="/move_base/global_costmap/costmap") -> None:
-        rospy.init_node("ddp_map_reader")
+        node_name = rospy.get_name()
+        # uninitializer node have name '/unnamed'
+        if 'unnamed' in node_name:
+            rospy.init_node("ddp")
         self.sub = rospy.Subscriber(topic, OccupancyGrid, self.callback)
         self.is_init = False
         self.costmap = OccupancyGrid()
@@ -15,6 +18,7 @@ class CostmapReader:
     # rosmsg info OccupancyGrid
         self.costmap = msg
         self.is_init = True
+        rospy.loginfo("got costmap")
 
     def check_index_in_map(self, index_xy):
         if index_xy[0]<0 or index_xy[1]<0:
@@ -38,7 +42,7 @@ class CostmapReader:
     def at(self, index_xy):
         # value of cell at index_xy[x,y]
         if not self.check_index_in_map(index_xy):
-            rospy.WARN("requested index is out of map")
+            rospy.logerr("requested index is out of map")
             return False
         size = self.get_size()
         index = index_xy[0]*size[1]+index_xy[1]
