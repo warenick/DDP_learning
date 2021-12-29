@@ -1,10 +1,10 @@
 #! /usr/bin/python3
-from utilites.Visualizer_ros import Visualizer_ros
+from scripts.utilites.Visualizer import Visualizer
 from env.Crowd import Crowd
 import time
 
 if __name__=="__main__":
-    viz = Visualizer_ros()
+    viz = Visualizer()
     crowd = Crowd(visualizer=viz)
     # crowd.read_from_conf("configs.X4")
     crowd.read_from_conf("configs.H4_social")

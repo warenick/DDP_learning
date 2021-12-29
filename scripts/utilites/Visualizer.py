@@ -8,36 +8,36 @@ import torch
 
 
 MARKER_CFG = {
-    "robot":{
-        "scale":Vector3(0.3, 0.6, 1.8),
-        "color":ColorRGBA(0.9, 0.9, 0.9, 1), # white
+    "robot": {
+        "scale": Vector3(0.3, 0.6, 1.8),
+        "color": ColorRGBA(0.9, 0.9, 0.9, 1),  # white
         "prediction_color": ColorRGBA(0.9, 0.9, 0.9, 0.2)},
-    "agent":{
-        "scale":Vector3(0.3, 0.6, 1.8),
-        "color":ColorRGBA(0, 0.9, 0, 1), # green
+    "agent": {
+        "scale": Vector3(0.3, 0.6, 1.8),
+        "color": ColorRGBA(0, 0.9, 0, 1),  # green
         "prediction_color": ColorRGBA(0, 0.9, 0, 0.2)},
-    "robot_path":{
-        "color":ColorRGBA(0, 1, 0, 1), # green
-        "scale":Vector3(0.15, 0.0, 0.0)}, # x - with of line
-    "agent_path":{
-        "color":ColorRGBA(0, 0.5, 0.5, 1), # green/blue
-        "scale":Vector3(0.1, 0.0, 0.0)}, # x - with of line
-    "robot_goal":{
-        "scale":Vector3(0.2, 0.35, 0.2),
-        "color":ColorRGBA(0, 1, 0, 1)}, # green
-    "agent_goal":{
-        "scale":Vector3(0.2, 0.35, 0.2),
-        "color":ColorRGBA(1, 1, 1, 1)}, # white
-    "arrows":{
-        "scale":Vector3(0.02, 0.1, 1),
-        "colors":[ColorRGBA(0, 1, 0, 1),  # - green
-                  ColorRGBA(0, 0, 1, 1),  # - blue]
-                  ColorRGBA(1, 0, 0, 1),]  # - red]
-        }}
-    
+    "robot_path": {
+        "color": ColorRGBA(0, 1, 0, 1),  # green
+        "scale": Vector3(0.15, 0.0, 0.0)},  # x - with of line
+    "agent_path": {
+        "color": ColorRGBA(0, 0.5, 0.5, 1),  # green/blue
+        "scale": Vector3(0.1, 0.0, 0.0)},  # x - with of line
+    "robot_goal": {
+        "scale": Vector3(0.2, 0.35, 0.2),
+        "color": ColorRGBA(0, 1, 0, 1)},  # green
+    "agent_goal": {
+        "scale": Vector3(0.2, 0.35, 0.2),
+        "color": ColorRGBA(1, 1, 1, 1)},  # white
+    "arrows": {
+        "scale": Vector3(0.02, 0.1, 1),
+        "colors": [ColorRGBA(0, 1, 0, 1),  # - green
+                   ColorRGBA(0, 0, 1, 1),  # - blue]
+                   ColorRGBA(1, 0, 0, 1), ]  # - red]
+    }}
 
 
-class Visualizer_ros:
+
+class Visualizer:
     
     def __init__(self, frame="map", topic="ddp/vis") -> None:
         self.frame = frame

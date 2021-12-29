@@ -1,11 +1,11 @@
 #! /usr/bin/python3
 from env.Agent import Agent
-from utilites.Visualizer_ros import Visualizer_ros
+from scripts.utilites.Visualizer import Visualizer
 from DDP import DDP 
 import time
 
 if __name__=="__main__":
-    viz = Visualizer_ros()
+    viz = Visualizer()
     dt = 0.4
     # horizon = 10 # 10 by default
     gradient_rate = 1.0
