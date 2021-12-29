@@ -29,8 +29,8 @@ class Crowd:
                     agent[field]=module.default[field]
             # create optimizer
             opt = agent["optimizer"]
-            if "social" in opt["type"]:
-                self.with_social = True
+            # if "social" in opt["type"]:
+            #     self.with_social = True
 
             if "ddp" in opt["type"].lower(): # "ddp" or "social_ddp"
                 new_optimizer = DDP(
@@ -51,7 +51,7 @@ class Crowd:
                 agent["name"],
             )
             self.add_agent(new_agent, new_optimizer)
-        print("optimisation with socials: ", self.with_social)
+        # print("optimisation with socials: ", self.with_social)
         
 
 
@@ -69,33 +69,53 @@ class Crowd:
 
 
         # TODO: parallel it
-        stacked_agents = None
+        # stacked_agents = None
         for _ in range(epochs):
-            if self.with_social:
-                stacked_agents = self.stack_agents_poses(self.agents)
+            # if self.with_social:
+            #     stacked_agents = self.stack_agents_poses(self.agents)
 
             # for (agent, optimizer) in zip(self.agents, self.optimizers):
             for num in range(len(self.agents)):
-                stacked_agents_exclude_one = stacked_agents[num] if self.with_social else None
-                self.agents[num].prediction["state"], self.agents[num].prediction["controll"] = self.optimizers[num].optimize(agent = self.agents[num], agents=stacked_agents_exclude_one, num_epochs=1, visualizer=viz) # optimize trajectory
+                stacked_agents_exclude_one = self.stack_agents_poses(self.agents, num) if "social" in self.optimizers[num].type else None
+                # TODO
+                # map = None if "social" in self.optimizers[num].type else None
+                # stacked_agents_exclude_one = stacked_agents[num] if self.with_social else None
+                self.agents[num].prediction["state"], self.agents[num].prediction["controll"] = self.optimizers[num].optimize(
+                    agent = self.agents[num], 
+                    agents=stacked_agents_exclude_one, 
+                    num_epochs=1, 
+                    visualizer=viz)
     
-    def stack_agents_poses(self, agents=None): # without one to avoid self influance
+    def stack_agents_poses(self, agents=None, exclude=None): # without one to avoid self influance
         agents = agents if agents is not None else self.agents 
         num_agents = len(agents)
         num_steps = len(agents[0].prediction["state"]) # prediction horizon # TODO: warn about different prediction horizon for agents 
         state_dim = len(agents[0].prediction["state"][0])
+        # make all combinations
         out = []
-        
-        for num in range(num_agents):
+        if exclude is None:
+            for num in range(num_agents):
+                out.append(self.stack_agents_poses(agents = agents, exclude=num))
+                # stacked_agents_without_one = torch.zeros((num_agents-1, num_steps, state_dim))
+                # stupid_fix = 0
+                # for agent in range(num_agents):
+                #     if agent is num:
+                #         stupid_fix=1
+                #         continue
+                #     stacked_agents_without_one[agent-stupid_fix] = agents[agent].prediction["state"]
+                # changed_axes = torch.moveaxis(stacked_agents_without_one,1,0) # convert to (num_steps, num_agents, state_dim)
+                # out.append(changed_axes)
+        else:
+            # for num in range(num_agents):
             stacked_agents_without_one = torch.zeros((num_agents-1, num_steps, state_dim))
             stupid_fix = 0
             for agent in range(num_agents):
-                if agent is num:
+                if agent is exclude:
                     stupid_fix=1
                     continue
                 stacked_agents_without_one[agent-stupid_fix] = agents[agent].prediction["state"]
             changed_axes = torch.moveaxis(stacked_agents_without_one,1,0) # convert to (num_steps, num_agents, state_dim)
-            out.append(changed_axes)
+            out= changed_axes
         return out
 
     def step(self):
