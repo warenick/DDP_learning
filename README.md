@@ -36,7 +36,10 @@ We have a launch file for starting preconfigured rviz with the demo of DDP.
 roslaunch ddp_learning ddp.launch
 ```
 After running this command, you will see something like this
-![ddp](https://user-images.githubusercontent.com/7687321/138083649-c75b1a58-0373-4277-b804-a382ec4b3672.gif)
+
+
+https://user-images.githubusercontent.com/7687321/147755971-03a9a807-c00c-41a3-b1d0-7e201d07bbc5.mp4
+
 
 
 ### Configuration and Development ###
