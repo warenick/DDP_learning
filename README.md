@@ -35,8 +35,7 @@ We have a launch file for starting preconfigured rviz with the demo of DDP.
 ```
 roslaunch ddp_learning ddp.launch
 ```
-After running this command, you will see something like this
-
+In that concrete example of scene H4_mix.py we can see two agents with Social-DDP optimizers moving opposite the Linear extrapolation model.
 
 https://user-images.githubusercontent.com/7687321/147755971-03a9a807-c00c-41a3-b1d0-7e201d07bbc5.mp4
 
