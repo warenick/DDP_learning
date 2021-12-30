@@ -28,8 +28,12 @@ class Crowd:
             for field in module.default:
                 if field not in agent:
                     agent[field]=module.default[field]
+            for field in module.default["optimizer"]:
+                if field not in agent["optimizer"]:
+                    agent["optimizer"][field] = module.default["optimizer"][field]
             # create optimizer
             opt = agent["optimizer"]
+
             # if "social" in opt["type"]:
             #     self.with_social = True
 
@@ -63,13 +67,13 @@ class Crowd:
         self.agents.append(agent)
         self.optimizers.append(optimizer)
 
-    def optimize(self, epochs=1, visualize=False, gradient_rate=None, regularisation=0.91):
+    def optimize(self, epochs=1, visualize=False, gradient_rate=None, regularisation = None):
         viz = self.viz if visualize else None
         # update optimisation params if needed
         for optimizer in self.optimizers:
-            optimizer.initial_gradient_rate = gradient_rate if gradient_rate is not None else optimizer.initial_gradient_rate
             optimizer.regularisation = regularisation if regularisation is not None else optimizer.regularisation                
-
+        # restore rate
+            optimizer.gradient_rate = gradient_rate if gradient_rate is not None else optimizer.initial_gradient_rate
 
         # TODO: parallel it
         for _ in range(epochs):

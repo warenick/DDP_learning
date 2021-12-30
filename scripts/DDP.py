@@ -8,7 +8,6 @@ class DDP:
         self.regularisation = regularisation
 
     def optimize(self, agent, agents = None, num_epochs=1, visualizer=None):
-        self.gradient_rate = self.initial_gradient_rate
         states = agent.prediction["state"]      #.clone().detach() # not sure that clone().detach() is necessary
         controlls = agent.prediction["controll"]#.clone().detach() # not sure that clone().detach() is necessary
         for _ in range(num_epochs):
