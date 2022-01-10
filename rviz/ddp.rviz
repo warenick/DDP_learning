@@ -59,13 +59,9 @@ Visualization Manager:
       Marker Topic: ddp/vis
       Name: MarkerArray
       Namespaces:
-        goal 1: true
         goal 2: true
-        predicted path 1: true
         predicted path 2: true
-        predicted states 1: true
         predicted states 2: true
-        state 1: true
         state 2: true
       Queue Size: 100
       Value: true
@@ -126,7 +122,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.557863235473633
+      Distance: 20.416913986206055
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -134,17 +130,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.15483784675598145
-        Y: 0.226881206035614
-        Z: 0.00281524658203125
+        X: 0.1322096288204193
+        Y: 0.1450384110212326
+        Z: 0.6039183735847473
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.454796314239502
+      Pitch: 1.45979642868042
       Target Frame: <Fixed Frame>
-      Yaw: 4.701730728149414
+      Yaw: 4.706739902496338
     Saved: ~
 Window Geometry:
   Displays:
