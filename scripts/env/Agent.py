@@ -9,7 +9,7 @@ class Agent():
                  type="agent",
                  kinematic_type="differencial",
                  dt=0.4,
-                 umax=[2.0, 1.0],
+                 umax=[20.0, 10.0],
                  horizon = 10,
                  name="Bert",
                  costmap=None):
@@ -140,7 +140,7 @@ class Agent():
 ########################### costs ###########################
 #############################################################
     def costmap_cost(self, state, controll):
-        return torch.tensor(self.costmap.at_position(state))# didn`t work at all
+        return torch.tensor(self.costmap.at_position(state))# work not so correct
         # return torch.tensor(0.)
         # candidate_state = self.step_func(state, controll)[:2]
         # return self.costmap.at_position(candidate_state)/(torch.linalg.norm(state[:2] - candidate_state+1e-7))
@@ -153,21 +153,25 @@ class Agent():
         # state[x,y,yaw]
         evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])**2 + torch.linalg.norm(state[:2]-self.goal[:2])
         # evclidian_dist = torch.linalg.norm(state[:2]-self.goal[:2])
-        # evclidian_dist = evclidian_dist if evclidian_dist>0.3 else evclidian_dist*0.3 # dirty fix oscilation near the goal
+        # evclidian_dist = evclidian_dist if evclidian_dist>0.3 else evclidian_dist*0.3 # dirty fix oscilation nearby the goal
         # angle_dist = (state[2]-self.goal[2])%self.pi*k_yaw
         return evclidian_dist
         # return evclidian_dist+angle_dist
 
-    def running_cost(self, state, controll, others=None, k_state=1.):
-        state_cost = self.final_cost(state)*k_state
-        # state_cost = torch.clip(self.final_cost(state)*k_state,-30, 30)
-        controll_cost = torch.sum(torch.pow(controll, 2))
-        social_cost = self.social_cost(state, others) if others is not None else torch.tensor(0.)
-        costmap_cost = self.costmap_cost(state, controll) if self.costmap is not None else torch.tensor(0.)
-        if costmap_cost !=0:
-            print("here")
+    def running_cost(self, state, controll, others=None, k_state=1):
+        # state_cost = self.final_cost(state)*k_state
+        state_cost = torch.clip(self.final_cost(state)*k_state,0, 10)
+        controll_cost = torch.clip(torch.sum(torch.pow(controll, 2)),0,10)
+        social_cost = torch.clip(self.social_cost(state, others) if others is not None else torch.tensor(0.),0,10)
+        costmap_cost = 0.1*self.costmap_cost(state, controll) if self.costmap is not None else torch.tensor(0.)
+        # costmap_cost = 0.1*torch.clip(self.costmap_cost(state, controll) if self.costmap is not None else torch.tensor(0.),0,10)
+        # costmap_cost = torch.clip(self.costmap_cost(state, controll) if self.costmap is not None else torch.tensor(0.),0,10)
+        # if costmap_cost !=0:
+        #     print("here")
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
+        # print("costmap_cost",costmap_cost)
+        # return state_cost+controll_cost+social_cost+costmap_cost
         return state_cost+controll_cost+social_cost+controll_cost*costmap_cost
 #############################################################
 ########################### costs ###########################

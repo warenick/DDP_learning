@@ -67,7 +67,7 @@ class DDP:
         u_seq_hat = u_seq#.clone().detach() # not sure that clone().detach() is necessary
         for t in range(len(u_seq)):
             control = u_seq[t] + (kk_seq[t] @ (x_seq_hat[t] - x_seq[t]) + k_seq[t])*self.gradient_rate
-            u_seq_hat[t, 0] =torch.clamp(control[0], -umax[0], umax[0])
-            u_seq_hat[t, 1] =torch.clamp(control[1], -umax[1], umax[1])
+            u_seq_hat[t, 0] = torch.clamp(control[0], -umax[0], umax[0])
+            u_seq_hat[t, 1] = torch.clamp(control[1], -umax[1], umax[1])
             x_seq_hat[t + 1] = step_func(x_seq_hat[t], u_seq_hat[t])
         return x_seq_hat, u_seq_hat

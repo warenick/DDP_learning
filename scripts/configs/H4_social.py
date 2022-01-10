@@ -6,7 +6,7 @@ default = {
     "type":"agent",
     "horizon": 6, # steps to be predicted
     "optimizer":{
-        "type":"social-ddp", # options: ddp, social-ddp, linear
+        "type":"ddp", # options: ddp, social-ddp, linear
         "gradient_rate":0.25,
         "regularisation":0.91,
     }

@@ -79,7 +79,7 @@ class Crowd:
         for _ in range(epochs):
             # for (agent, optimizer) in zip(self.agents, self.optimizers):
             for num in range(len(self.agents)):
-                stacked_agents_exclude_one = self.stack_agents_poses(self.agents, num) if "social" in self.optimizers[num].type else None
+                stacked_agents_exclude_one = self.stack_agents_poses(self.agents, num) if "social" in self.optimizers[num].type and len(self.agents)>1 else None
                 self.agents[num].prediction["state"], self.agents[num].prediction["controll"] = self.optimizers[num].optimize(
                     agent = self.agents[num], 
                     agents=stacked_agents_exclude_one,

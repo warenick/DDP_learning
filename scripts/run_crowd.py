@@ -19,10 +19,10 @@ if __name__=="__main__":
     # crowd.read_from_conf("configs.costs_issue2")
     # crowd.read_from_conf("configs.costs_issue3")
     t1 = time.time()
-    crowd.optimize(epochs=5, visualize=True)
+    crowd.optimize(epochs=10, visualize=True)
     print(f"calculation time: {(time.time()-t1):.3}s",)
     for _ in range(100):
         crowd.step()
-        crowd.optimize(epochs=2, visualize=True)
+        crowd.optimize(epochs=5, visualize=True)
         crowd.visualaze()
     exit()
