@@ -9,7 +9,7 @@ class Agent():
                  type="agent",
                  kinematic_type="differencial",
                  dt=0.4,
-                 umax=[20.0, 10.0],
+                 umax=[2.0, 0, 1.0],
                  horizon = 10,
                  name="Bert",
                  costmap=None):
@@ -34,7 +34,7 @@ class Agent():
         steps = steps if steps is not None else self.horizon
         state = state if state is not None else self.state
         goal = goal if goal is not None else self.goal
-        controll = torch.rand((steps, 2)) #torch.zeros((steps, 2))
+        controll = torch.rand((steps, 3)) #torch.zeros((steps, 2))
         current_state = state.clone()
         
         # rotate to moving dir firstly
@@ -45,13 +45,13 @@ class Agent():
         while  torch.linalg.norm(current_state[2] - angle_direction)>0.01 and curr_step<steps:
             angle_diff = current_state[2]-angle_direction
             move_angle = sign*angle_diff#%self.pi
-            controll[curr_step] = torch.clip(torch.tensor([0., move_angle]),-self.umax[1],self.umax[1])
+            controll[curr_step] = torch.clip(torch.tensor([0.,0., move_angle]),-self.umax[2],self.umax[2])
             current_state = self.step_func(current_state, controll[curr_step])
             curr_step+=1
         # move forvard next
         while curr_step<steps:
             dist = torch.linalg.norm(current_state[:2]-goal[:2])
-            controll[curr_step] = torch.clip(torch.tensor([dist,0.]),-self.umax[0],self.umax[0])
+            controll[curr_step] = torch.clip(torch.tensor([dist,0.,0.]),-self.umax[0],self.umax[0])
             current_state = self.step_func(current_state, controll[curr_step])
             curr_step+=1
         return controll
@@ -93,12 +93,14 @@ class Agent():
             self.prediction["state"][t+1] = self.step_func(self.prediction["state"][t], self.prediction["controll"][t])
 
     def step_func(self, x, u):
+        # u = [Vx,Vy,Vyaw]
+        Vx  = torch.clamp((u[0]), -self.umax[0], self.umax[0]) # Linear x velocity
+        Vy  = torch.clamp((u[1]), -self.umax[1], self.umax[1]) # Linear y velocity
+        Vr = torch.clamp((u[2]), -self.umax[2], self.umax[2])+1e-6 # Angular velocity of robot
+        
         if "differencial" in self.kinematic_type:
-            # u = [v,vyaw]
-            V  = torch.clamp((u[0]), -self.umax[0], self.umax[0]) # Linear velocity
-            Vr = torch.clamp((u[1]), -self.umax[1], self.umax[1])+1e-6 # Angular velocity of robot
             # Radius of trajectory
-            R = V/(Vr)
+            R = Vx/(Vr)
             # Instantaneous Center of Curvature
             icc = x[:2]+R*(
                 torch.sin(x[2])*torch.Tensor([-1,0])+
@@ -223,7 +225,7 @@ class Agent():
         return out_jacobian[0] # [0] -> over state
 
     def f_u(self,state,controll):
-        # [3,2] Jacobian over constroll
+        # [3,3] Jacobian over constroll
         out_jacobian = torch.autograd.functional.jacobian(self.step_func,(state,controll)) # [0] - over state, [1] - over controll
         return out_jacobian[1] # [1] -> over controll
 
@@ -232,7 +234,7 @@ class Agent():
         return torch.autograd.functional.hessian(self.final_cost,state)
 
     def l_xx_l_uu_l_ux(self, state, controll, others = None):
-        # [3,3] Hessian over state, [2,2] Hessian over controll, [2,3] Hessian over controll and state
+        # [3,3] Hessian over state, [3,3] Hessian over controll, [3,3] Hessian over controll and state
         if others is not None:
             hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll,others)) # [[xx,xy],[yx,yy]]
         else:
@@ -248,7 +250,7 @@ class Agent():
         return hessian_out[0][0] # [0][0] -> x,x
 
     def l_uu(self, state, controll, others = None):
-        # [2,2] Hessian over controll
+        # [3,3] Hessian over controll
         if others is not None:
             hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll,others))
         else:
@@ -257,7 +259,7 @@ class Agent():
         return hessian_out[1][1] # [1][1] -> u,u
 
     def l_ux(self, state, controll, others = None):
-        # [2,3] Hessian over controll and state
+        # [3,3] Hessian over controll and state
         if others is not None:
             hessian_out = torch.autograd.functional.hessian(self.running_cost,(state,controll,others))
         else:
@@ -270,7 +272,7 @@ class Agent():
         return self.second_derivative_of_vector_func(self.step_func, inputs, wrt=[0,0])        
 
     def f_uu(self, state, controll):
-        # [3,2,2]
+        # [3,3,3]
         inputs = (state.clone().detach().requires_grad_(True),controll.clone().detach().requires_grad_(True))
         return self.second_derivative_of_vector_func(self.step_func, inputs, wrt=[1,1])
     
@@ -278,7 +280,7 @@ class Agent():
         return (x**3)*y**3
 
     def f_ux(self, state, controll):        
-        # [3,2,3]
+        # [3,3,3]
         inputs = (state.clone().detach().requires_grad_(True),controll.clone().detach().requires_grad_(True))
         return self.second_derivative_of_vector_func(self.step_func, inputs, wrt=[1,0])
         # return self.second_derivative_of_vector_func(self.func2, inputs, wrt=[1,0])

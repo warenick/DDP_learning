@@ -25,8 +25,8 @@ class DDP:
         b = [torch.zeros(state_dim) for _ in range(pred_time + 1)]
         A = [torch.zeros((state_dim, state_dim)) for _ in range(pred_time + 1)]
         f_xx  = agent.f_xx
-        # f_uu  = agent.f_uu
-        # f_ux  = agent.f_ux
+        f_uu  = agent.f_uu
+        f_ux  = agent.f_ux
         # that definition here just for readability
         b[-1] = agent.lf_x(x_seq[-1])
         A[-1] = agent.lf_xx(x_seq[-1])
@@ -46,8 +46,8 @@ class DDP:
             Q_x = l_x + f_x.T @ b[t+1]
             Q_u = l_u + f_u.T @ b[t+1]
             Q_xx = l_xx + f_x.T @ A[t+1] @ f_x + b[t+1] @ f_xx(x,u)
-            Q_ux = l_ux + f_u.T @ A[t+1] @ f_x# + b[t+1] @ f_ux(x,u)
-            Q_uu = l_uu + f_u.T @ A[t+1] @ f_u# + b[t+1] @ f_uu(x,u)
+            Q_ux = l_ux + f_u.T @ A[t+1] @ f_x + b[t+1] @ f_ux(x,u)
+            Q_uu = l_uu + f_u.T @ A[t+1] @ f_u + b[t+1] @ f_uu(x,u)
             # try:
             inv_Q_uu = torch.linalg.inv(Q_uu) # potencially danger operation
             # except:
@@ -69,5 +69,6 @@ class DDP:
             control = u_seq[t] + (kk_seq[t] @ (x_seq_hat[t] - x_seq[t]) + k_seq[t])*self.gradient_rate
             u_seq_hat[t, 0] = torch.clamp(control[0], -umax[0], umax[0])
             u_seq_hat[t, 1] = torch.clamp(control[1], -umax[1], umax[1])
+            u_seq_hat[t, 2] = torch.clamp(control[2], -umax[2], umax[2])
             x_seq_hat[t + 1] = step_func(x_seq_hat[t], u_seq_hat[t])
         return x_seq_hat, u_seq_hat
