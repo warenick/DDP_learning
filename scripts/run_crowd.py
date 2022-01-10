@@ -14,14 +14,14 @@ if __name__=="__main__":
     # crowd.read_from_conf("configs.H4_costmap", costmap=cr)
     # crowd.read_from_conf("configs.H4_social")
     # crowd.read_from_conf("configs.H4_linear")
-    crowd.read_from_conf("configs.H4_mix")
+    crowd.read_from_conf("configs.H4_dev", costmap=cr)
     # crowd.read_from_conf("configs.costs_issue1")
     # crowd.read_from_conf("configs.costs_issue2")
     # crowd.read_from_conf("configs.costs_issue3")
     t1 = time.time()
     crowd.optimize(epochs=5, visualize=True)
     print(f"calculation time: {(time.time()-t1):.3}s",)
-    for _ in range(60):
+    for _ in range(100):
         crowd.step()
         crowd.optimize(epochs=2, visualize=True)
         crowd.visualaze()

@@ -113,6 +113,11 @@ class Agent():
                 (icc[0]*self.aux100 + \
                  icc[1]*self.aux010 + \
                  Vr*self.dt*self.aux001)
+        # check map collision
+        # TODO: why my map maximum value is 100 ???
+        # TODO: put here 128(cost_possibility_collision http://wiki.ros.org/costmap_2d)
+        if self.costmap is not None and self.costmap.at_position(pose)>=99: 
+            return x
         return pose
 
     def step(self, controll = None):
@@ -134,8 +139,11 @@ class Agent():
 #############################################################
 ########################### costs ###########################
 #############################################################
-    def costmap_cost(self, state):
-        return torch.tensor(self.costmap.at_position(state))
+    def costmap_cost(self, state, controll):
+        return torch.tensor(self.costmap.at_position(state))# didn`t work at all
+        # return torch.tensor(0.)
+        # candidate_state = self.step_func(state, controll)[:2]
+        # return self.costmap.at_position(candidate_state)/(torch.linalg.norm(state[:2] - candidate_state+1e-7))
 
     def social_cost(self, state, others):
         distances = torch.sum(1./torch.linalg.norm(state[:2]-others[:,:2],dim=1))**2
@@ -152,11 +160,12 @@ class Agent():
 
     def running_cost(self, state, controll, others=None, k_state=1.):
         state_cost = self.final_cost(state)*k_state
+        # state_cost = torch.clip(self.final_cost(state)*k_state,-30, 30)
         controll_cost = torch.sum(torch.pow(controll, 2))
         social_cost = self.social_cost(state, others) if others is not None else torch.tensor(0.)
-        costmap_cost = self.costmap_cost(state) if self.costmap is not None else torch.tensor(0.)
-        # if costmap_cost !=0:
-        #     print("here")
+        costmap_cost = self.costmap_cost(state, controll) if self.costmap is not None else torch.tensor(0.)
+        if costmap_cost !=0:
+            print("here")
         # print("state_cost",state_cost)
         # print("controll_cost",controll_cost)
         return state_cost+controll_cost+social_cost+controll_cost*costmap_cost

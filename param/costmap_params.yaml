@@ -32,8 +32,8 @@ global_costmap:
         trinary_costmap: true
 
     inflater_layer:
-        inflation_radius: 1.0
-        cost_scaling_factor: 5.0
+        inflation_radius: 0.75
+        cost_scaling_factor: 10.0
 
 local_costmap:
     global_frame: map
@@ -69,5 +69,5 @@ local_costmap:
     #     trinary_costmap: true
 
     inflater_layer:
-        inflation_radius: 1.0
-        cost_scaling_factor: 5.0
+        inflation_radius: 0.55
+        cost_scaling_factor: 10.0
