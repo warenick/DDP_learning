@@ -24,7 +24,7 @@ class CostmapReader:
         if index_xy[0]<0 or index_xy[1]<0:
             return False 
         size = self.get_size()
-        if index_xy[0]>size[0] or index_xy[1]>size[1]:
+        if index_xy[0]>=size[0] or index_xy[1]>=size[1]:
             return False 
         return True
 
@@ -45,7 +45,7 @@ class CostmapReader:
             rospy.logerr("requested index is out of map")
             return False
         size = self.get_size()
-        index = index_xy[0]*size[1]+index_xy[1]
+        index = index_xy[1]*size[0]+index_xy[0]
         return self.costmap.data[index]
         
 
@@ -95,21 +95,33 @@ if __name__=="__main__":
     cr = CostmapReader()
     while not cr.is_init:
         rospy.sleep(.1)
-    p1 = [0,0] # center
-    p2 = [1.0,10.0]
-    p3 = [-1.0,-1.0]
-    index1 = [0,0] # border
-    index2 = [cr.get_size()[0]-1, cr.get_size()[1]-1] # border
-    index3 = [cr.get_size()[0]/2, cr.get_size()[1]/2] # center
-    # from pprint import pprint
+    # info test
     print("cr.get_position() ", cr.get_position())    
     print("cr.get_length() ", cr.get_length())    
     print("cr.get_resolution() ", cr.get_resolution())    
     print("cr.get_size() ", cr.get_size())    
+    # indexes test
+    index1 = [0,0] # border
+    index2 = [cr.get_size()[0]-1, cr.get_size()[1]-1] # border
+    index3 = [cr.get_size()[0]/2, cr.get_size()[1]/2] # center
     print("cr.at(index1) ", index1, cr.at(index1))
     print("cr.at(index2) ", index2, cr.at(index2))
-    print("cr.at_position(p1) ", p1, cr.at_position(p1))
-    print("cr.at_position(p2) ", p2, cr.at_position(p2))
-    print("cr.at_position(p3) ", p3, cr.at_position(p3))
+    
+    # points test
+    px_border = [cr.get_length()[0]+cr.get_position()[0]-0.01, 0]
+    py_border = [0, cr.get_length()[1]+cr.get_position()[1]-0.01]
+    p_out_of_border = [cr.get_length()[0]+cr.get_position()[0]+0.01, 0]
+
+    collision_point = [-1,2]
+    partially_collision_point1 = [-0.5,1.3]
+    partially_collision_point2 = [0,1]
+    free_collision_point = [0,0]
+    print("cr.at_position(px_border) ", px_border, cr.at_position(px_border))
+    print("cr.at_position(py_border) ", py_border, cr.at_position(py_border))
+    print("cr.at_position(p_out_of_border) ", p_out_of_border, cr.at_position(p_out_of_border))
+    print("cr.at_position(collision_point) ", collision_point, cr.at_position(collision_point))
+    print("cr.at_position(partially_collision_point1) ", partially_collision_point1, cr.at_position(partially_collision_point1))
+    print("cr.at_position(partially_collision_point2) ", partially_collision_point2, cr.at_position(partially_collision_point2))
+    print("cr.at_position(free_collision_point) ", free_collision_point, cr.at_position(free_collision_point))
 
     
